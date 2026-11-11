@@ -11,51 +11,16 @@ const fileSafe=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(
 const ls={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
 const {AVATARS,NIVEAUX,avatarSVG,badgeSVG,logoSVG}=window.BSART;
 
-/* ───────── Réglages (modifiables par le professeur) ───────── */
-const ACTS=[{n:'Tennis de table',e:'🏓'},{n:'Badminton',e:'🏸'},{n:'Tennis',e:'🎾'},{n:'Sports de combat',e:'🥋'}];
-const DEF={xp:{joue:10,victoire:25,bonus:5},ecart:[[3,5],[6,10],[10,15]],seuils:[0,150,400,750],
- acts:{
-  'Tennis de table':{impose:'',obs:['Faire déplacer mon adversaire','Varier les trajectoires (long / court, gauche / droite)','Varier mes services','Jouer en revers quand il le faut','Accélérer sur une balle haute']},
-  'Badminton':{impose:'',obs:['Faire déplacer mon adversaire aux 4 coins','Alterner jeu long et jeu court','Smasher sur un volant haut','Revenir au centre après chaque frappe','Servir long et haut']},
-  'Tennis':{impose:'',obs:['Faire déplacer mon adversaire','Jouer en revers quand il le faut','Monter au filet pour conclure','Varier la longueur de balle','Réussir mes premières balles de service']},
-  'Sports de combat':{impose:'',obs:['Conserver ma garde','Déséquilibrer avant d\'attaquer','Enchaîner deux actions','Rester dans la zone de combat','Contrôler mon adversaire au sol']}
- }};
-const CFG_KEY='BALLSTAR_CONFIG',CFG_SHEET='BallStar_Config';
-const clone=o=>JSON.parse(JSON.stringify(o));
-function loadCfg(){let c=null;try{c=JSON.parse(ls.get(CFG_KEY)||'null')}catch(e){}
- const d=clone(DEF);if(!c)return d;
- Object.assign(d.xp,c.xp||{});if(Array.isArray(c.ecart))d.ecart=c.ecart;if(Array.isArray(c.seuils)&&c.seuils.length===4)d.seuils=c.seuils;
- for(const a of ACTS){const x=(c.acts||{})[a.n];if(x){if(Array.isArray(x.obs)&&x.obs.length)d.acts[a.n].obs=x.obs;d.acts[a.n].impose=x.impose||''}}
- return d}
+/* ───────── Règles et réglages (lecture seule côté élève) ─────────
+   Les réglages ne se modifient que dans l'interface prof (BallStar_Prof). L'élève peut seulement importer
+   le fichier de réglages produit par son professeur : un fichier modifié à la main est refusé (code de contrôle). */
+const R_=window.BSRULES,{ACTS,DEFIS,calcXP,isWin,isOk}=R_;
+const CFG_KEY='BALLSTAR_CONFIG',CFG_SHEET=R_.CFG_SHEET;
+function loadCfg(){try{const o=JSON.parse(ls.get(CFG_KEY)||'null');if(o&&o.cfg&&o.code&&o.code===R_.signe(o.cfg))return R_.clean(o.cfg)}catch(e){}return R_.clean(R_.DEF)}
 let CFG=loadCfg();
-const saveCfg=()=>ls.set(CFG_KEY,JSON.stringify(CFG));
-
-/* ───────── Calcul de l'XP d'un match ───────── */
-function calcXP(me,adv,ok){
- const win=me>adv,ecart=Math.abs(me-adv);
- let xe=0;if(win)for(const [min,xp] of [...CFG.ecart].sort((a,b)=>a[0]-b[0]))if(ecart>=N(min)&&N(min)>0)xe=N(xp);
- const r={match:N(CFG.xp.joue),victoire:win?N(CFG.xp.victoire):0,ecart:xe,bonus:ok?N(CFG.xp.bonus):0};
- r.total=r.match+r.victoire+r.ecart+r.bonus;r.win=win;r.nul=me===adv;r.diff=ecart;return r}
-const maxEcartXP=()=>Math.max(0,...CFG.ecart.map(e=>N(e[1])));
-
-/* ───────── Progression ───────── */
-const sortRows=rows=>[...rows].sort((a,b)=>(String(a.Date)+String(a.Heure||'')).localeCompare(String(b.Date)+String(b.Heure||'')));
-const levelOf=xp=>{let l=0;CFG.seuils.forEach((s,i)=>{if(xp>=N(s))l=i});return l};
-function streak(rows,f){let m=0,c=0;for(const r of rows){if(f(r)){c++;m=Math.max(m,c)}else c=0}return m}
-const isWin=r=>r['Résultat']==='Victoire',isOk=r=>String(r['Observable réussi']).toLowerCase()==='oui';
-const DEFIS=[
- {id:'combo',nom:'Série de feu',desc:"Gagner 3 matchs d'affilée",but:3,val:R=>streak(R,isWin)},
- {id:'globe',nom:'Tour du monde',desc:'Affronter 5 adversaires différents',but:5,val:R=>new Set(R.map(r=>norm(r.Adversaire)).filter(Boolean)).size},
- {id:'lynx',nom:'Œil de lynx',desc:"Réussir l'observable 5 fois",but:5,val:R=>R.filter(isOk).length},
- {id:'turbo',nom:'Increvable',desc:'Jouer 10 matchs',but:10,val:R=>R.length},
- {id:'titan',nom:'Rouleau compresseur',desc:"Gagner un match avec le plus gros bonus d'écart",but:1,val:R=>{const m=maxEcartXP();return m>0?R.filter(r=>isWin(r)&&N(r['XP écart'])>=m).length:0}},
- {id:'zen',nom:'Maîtrise totale',desc:"Réussir l'observable 3 matchs d'affilée",but:3,val:R=>streak(R,isOk)}
-];
-function state(rows){const R=sortRows(rows);const xp=R.reduce((s,r)=>s+N(r['XP gagnée']),0),lvl=levelOf(xp);
- const defis=DEFIS.map(d=>{const v=d.val(R);return{...d,v:Math.min(v,d.but),done:v>=d.but}});
- const unlocked=new Set(AVATARS.filter(a=>a.defi?defis.find(d=>d.id===a.defi).done:a.niveau<=lvl).map(a=>a.id));
- const w=R.filter(isWin).length,l=R.filter(r=>r['Résultat']==='Défaite').length,ok=R.filter(isOk).length;
- return{R,xp,lvl,defis,unlocked,w,l,ok,n:R.length}}
+const saveCfg=()=>ls.set(CFG_KEY,JSON.stringify({cfg:CFG,code:R_.signe(CFG)}));
+const levelOf=xp=>R_.levelOf(CFG,xp);
+function state(rows){const p=R_.progression(CFG,rows);p.unlocked=new Set(AVATARS.filter(a=>a.defi?p.defis.find(d=>d.id===a.defi).done:a.niveau<=p.lvl).map(a=>a.id));return p}
 
 /* ───────── Données élève ───────── */
 let ME=null,ROWS=[],ST=state([]);
@@ -65,9 +30,9 @@ const avKey=()=>'BALLSTAR_AVATAR_'+(ME?ME.id:'anon');
 function activeAvatar(){let id=ls.get(avKey());if(!id||!ST.unlocked.has(id))id='pixel';return AVATARS.find(a=>a.id===id)}
 
 /* ───────── Interface : navigation ───────── */
-const VIEWS=['vArene','vMatch','vDefis','vAvatars','vBilan','vProf'];
+const VIEWS=['vArene','vMatch','vDefis','vAvatars','vBilan'];
 function go(v){VIEWS.forEach(x=>$('#'+x).hidden=x!==v);$$('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.go===v));
- if(v==='vProf')renderProf();if(v==='vMatch')renderMatchForm();window.scrollTo({top:0,behavior:'smooth'})}
+ if(v==='vMatch')renderMatchForm();window.scrollTo({top:0,behavior:'smooth'})}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(b)go(b.dataset.go)});
 
 function toast(msg,ko){const t=document.createElement('div');t.className='toast'+(ko?' ko':'');t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3200)}
@@ -119,7 +84,7 @@ function renderMatchForm(){if(!F.act)F.act=lastAct();
  preview()}
 function curObs(){const c=CFG.acts[F.act];return c.impose?{txt:c.impose,src:'Prof'}:{txt:F.obsSel,src:c.obs.includes(F.obsSel)?'Liste':'Élève'}}
 function scores(){return{me:Math.max(0,Math.round(N($('#sMe').value))),adv:Math.max(0,Math.round(N($('#sAdv').value)))}}
-function preview(){const s=scores(),x=calcXP(s.me,s.adv,F.ok==='Oui');
+function preview(){const s=scores(),x=calcXP(CFG,s.me,s.adv,F.ok==='Oui');
  $('#advLb').textContent=$('#mAdv').value.trim()||'Adversaire';
  $('#mPrev').innerHTML=`<div>🎮 Match joué<span>+${x.match} XP</span></div><div class="${x.victoire?'':'off'}">🏆 Victoire<span>+${x.victoire} XP</span></div>
  <div class="${x.ecart?'':'off'}">📏 Écart au score (${x.diff} pt${x.diff>1?'s':''})<span>+${x.ecart} XP</span></div><div class="${x.bonus?'':'off'}">🎯 Observable réussi<span>+${x.bonus} XP</span></div>
@@ -138,12 +103,12 @@ $('#mSave').onclick=async()=>{const err=t=>{$('#mErr').textContent=t;toast(t,tru
  if(!F.ok)return err('Indique si ton observable est réussi.');
  if(!F.val)return err('Indique qui a validé ton observable.');
  if(!ME){if(window.ELEVE){ELEVE.changer();await ELEVE.demander();await reload()}if(!ME)return err("Identifie-toi pour enregistrer ton match.")}
- const x=calcXP(s.me,s.adv,F.ok==='Oui'),before=ST,now=new Date(),p=n=>String(n).padStart(2,'0');
+ const x=calcXP(CFG,s.me,s.adv,F.ok==='Oui'),before=ST,now=new Date(),p=n=>String(n).padStart(2,'0');
  const xpCum=before.xp+x.total,lvlAfter=levelOf(xpCum);
  const row={Date:`${now.getFullYear()}-${p(now.getMonth()+1)}-${p(now.getDate())}`,Heure:`${p(now.getHours())}:${p(now.getMinutes())}:${p(now.getSeconds())}`,
   'Activité':F.act,Adversaire:adv,'Mon score':s.me,'Score adversaire':s.adv,'Résultat':x.win?'Victoire':x.nul?'Égalité':'Défaite','Écart':x.diff,
   Observable:o.txt,'Origine observable':o.src,'Observable réussi':F.ok,'Validé par':F.val,
-  'XP match':x.match,'XP victoire':x.victoire,'XP écart':x.ecart,'XP bonus':x.bonus,'XP gagnée':x.total,'XP cumulée':xpCum,Niveau:NIVEAUX[lvlAfter].nom};
+  'XP match':x.match,'XP victoire':x.victoire,'XP écart':x.ecart,'XP bonus':x.bonus,'XP gagnée':x.total,'XP cumulée':xpCum,Niveau:NIVEAUX[lvlAfter].nom,'Réglages':R_.codeCourt(CFG)};
  try{const ok=await ELEVE.enregistrer(APP_ID,row);if(!ok)return err("Identifie-toi pour enregistrer ton match.")}catch(e){return err("Enregistrement impossible : "+(e.message||e))}
  await reload();
  // remise à zéro du formulaire (on garde l'activité et l'observable)
@@ -202,48 +167,21 @@ $('#bClear').onclick=async()=>{if(!ME)return toast("Aucune donnée : tu n'es pas
  if(v==='exp'){await exporter();return}
  if(v==='del'){await ELEVE.effacerApp(APP_ID);ls.set(avKey(),'pixel');await reload();toast('Données Ball Star effacées')}};
 
-/* ───────── Réglages du professeur ───────── */
-function renderProf(){$('#pJoue').value=CFG.xp.joue;$('#pVict').value=CFG.xp.victoire;$('#pBonus').value=CFG.xp.bonus;
- const e=[...CFG.ecart];while(e.length<3)e.push([0,0]);
- $('#pEcart').innerHTML=e.slice(0,3).map((x,i)=>`<div class="ecart">Écart ≥ <input type="number" min="0" id="pE${i}" value="${N(x[0])}" aria-label="Écart minimal ${i+1}"> points → + <input type="number" min="0" id="pX${i}" value="${N(x[1])}" aria-label="XP de l'écart ${i+1}"> XP</div>`).join('');
- [1,2,3].forEach(i=>$('#pS'+i).value=CFG.seuils[i]);
- $('#pActs').innerHTML=ACTS.map((a,i)=>{const c=CFG.acts[a.n];return `<div class="actbox"><h4>${a.e} ${esc(a.n)}</h4>
-  <label class="f">Liste des observables<textarea id="pO${i}">${esc(c.obs.join('\n'))}</textarea></label>
-  <label class="f">Observable de la classe<select id="pI${i}"><option value="">Libre : l'élève choisit</option>${c.obs.map(o=>`<option ${o===c.impose?'selected':''}>${esc(o)}</option>`).join('')}${c.impose&&!c.obs.includes(c.impose)?`<option selected>${esc(c.impose)}</option>`:''}</select></label></div>`}).join('');
- ACTS.forEach((a,i)=>$('#pO'+i).addEventListener('change',()=>{const sel=$('#pI'+i),cur=sel.value,list=lines($('#pO'+i).value);
-  sel.innerHTML=`<option value="">Libre : l'élève choisit</option>`+list.map(o=>`<option ${o===cur?'selected':''}>${esc(o)}</option>`).join('')}))}
-const lines=t=>[...new Set(String(t||'').split(/\r?\n/).map(s=>s.trim()).filter(Boolean))];
-$('#pSave').onclick=()=>{const s=[0,N($('#pS1').value),N($('#pS2').value),N($('#pS3').value)];
- if(!(s[1]>0&&s[2]>s[1]&&s[3]>s[2]))return toast('Les seuils doivent augmenter : Argent < Or < Star.',true);
- const acts={};for(const [i,a] of ACTS.entries()){const obs=lines($('#pO'+i).value);if(!obs.length)return toast(`Ajoutez au moins un observable en ${a.n}.`,true);acts[a.n]={obs,impose:$('#pI'+i).value}}
- CFG={xp:{joue:N($('#pJoue').value),victoire:N($('#pVict').value),bonus:N($('#pBonus').value)},
-  ecart:[0,1,2].map(i=>[N($('#pE'+i).value),N($('#pX'+i).value)]).filter(e=>e[0]>0),seuils:s,acts};
- saveCfg();ST=state(ROWS);renderAll();toast('Réglages enregistrés')};
-$('#pReset').onclick=async()=>{const v=await modal('<h2>Réglages par défaut ?</h2><p>Les observables et le barème reviennent aux valeurs de départ.</p>',[{t:'Rétablir',v:1},{t:'Annuler',v:0,cls:'g'}]);
- if(v){CFG=clone(DEF);saveCfg();ST=state(ROWS);renderProf();renderAll();toast('Réglages par défaut rétablis')}};
-$('#pExport').onclick=()=>{const r=[['Paramètre','Activité','Valeur','XP'],['XP match joué','','',CFG.xp.joue],['XP victoire','','',CFG.xp.victoire],['XP observable réussi','','',CFG.xp.bonus]];
- CFG.ecart.forEach(e=>r.push(['Bonus écart','',e[0],e[1]]));[1,2,3].forEach(i=>r.push(['Seuil niveau',NIVEAUX[i].nom,CFG.seuils[i],'']));
- ACTS.forEach(a=>{const c=CFG.acts[a.n];c.obs.forEach(o=>r.push(['Observable',a.n,o,'']));if(c.impose)r.push(['Observable imposé',a.n,c.impose,''])});
- const lis=[['Ball Star — fichier de réglages du professeur'],[''],["Les élèves l'importent dans Ball Star : écran « Match » → « Importer les réglages »."],["Vous pouvez modifier la feuille BallStar_Config dans un tableur : une ligne « Observable » par observable, « Observable imposé » pour fixer celui de la classe."]];
- BSX.download(BSX.write([{name:'Lisez-moi',rows:lis},{name:CFG_SHEET,rows:r}]),'BallStar_Reglages.xlsx');toast('Fichier de réglages exporté')};
-const pickCfg=()=>$('#cfgFile').click();$('#pImport').onclick=pickCfg;$('#mImpCfg').onclick=pickCfg;
+/* ───────── Règles du jeu (lecture seule) & import des réglages du prof ───────── */
+function renderRegles(){const c=CFG,src=R_.isDefault(c)?'Réglages par défaut':'Réglages de ton professeur (code '+R_.codeCourt(c)+')';
+ $('#rSrc').textContent=src;
+ $('#rXP').innerHTML=`<div>🎮 Match joué<span>+${c.xp.joue} XP</span></div><div>🏆 Victoire<span>+${c.xp.victoire} XP</span></div>
+ ${c.ecart.map(e=>`<div>📏 Victoire avec ${e[0]} points d'écart ou plus<span>+${e[1]} XP</span></div>`).join('')}<div>🎯 Observable réussi<span>+${c.xp.bonus} XP</span></div>`}
+$('#mImpCfg').onclick=$('#rImp').onclick=()=>$('#cfgFile').click();
 $('#cfgFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
- try{const sh=(await BSX.read(await f.arrayBuffer())).find(s=>norm(s.name)===norm(CFG_SHEET));if(!sh)throw new Error('feuille « '+CFG_SHEET+' » introuvable');
-  const c=clone(DEF),obs={},imp={},ec=[];let seen=0;
-  for(const row of sh.rows.slice(1)){const [p,a,v,x]=Array.from(row||[],z=>z==null?'':z),k=norm(p),act=ACTS.find(z=>norm(z.n)===norm(a));
-   if(k==='xpmatchjoue'){c.xp.joue=N(x);seen++}else if(k==='xpvictoire'){c.xp.victoire=N(x);seen++}else if(k==='xpobservablereussi'){c.xp.bonus=N(x);seen++}
-   else if(k==='bonusecart'&&N(v)>0){ec.push([N(v),N(x)]);seen++}
-   else if(k==='seuilniveau'){const i=NIVEAUX.findIndex(n=>norm(n.nom)===norm(a));if(i>0){c.seuils[i]=N(v);seen++}}
-   else if(k==='observable'&&act&&String(v).trim()){(obs[act.n]=obs[act.n]||[]).push(String(v).trim());seen++}
-   else if(k==='observableimpose'&&act){imp[act.n]=String(v).trim();seen++}}
-  if(!seen)throw new Error('aucun réglage reconnu');
-  if(ec.length)c.ecart=ec;ACTS.forEach(a=>{if(obs[a.n])c.acts[a.n].obs=[...new Set(obs[a.n])];c.acts[a.n].impose=imp[a.n]||''});
-  CFG=c;saveCfg();ST=state(ROWS);renderAll();if(!$('#vProf').hidden)renderProf();toast('Réglages du professeur importés ✔')}
- catch(x){toast('Fichier non reconnu : '+(x.message||x),true)}};
-$('#bProf').onclick=()=>go('vProf');
+ try{const sh=(await BSX.read(await f.arrayBuffer())).find(s=>R_.norm(s.name)===R_.norm(CFG_SHEET));if(!sh)throw new Error('ce n\'est pas un fichier de réglages Ball Star');
+  const r=R_.depuisLignes(sh.rows);
+  if(!r.valide)throw new Error('ce fichier a été modifié ou ne vient pas de l\'interface prof. Demande le fichier original à ton professeur.');
+  CFG=r.cfg;saveCfg();ST=state(ROWS);renderAll();toast('Réglages du professeur importés ✔')}
+ catch(x){toast('Fichier refusé : '+(x.message||x),true)}};
 
 /* ───────── Rendu global & démarrage ───────── */
-function renderAll(){renderArene();renderDefis();renderAvatars();renderBilan();if(!$('#vMatch').hidden)renderMatchForm()}
+function renderAll(){renderArene();renderDefis();renderRegles();renderAvatars();renderBilan();if(!$('#vMatch').hidden)renderMatchForm()}
 document.addEventListener('click',async e=>{if(e.target.id==='bIdent'&&window.ELEVE){ELEVE.changer();await ELEVE.demander();reload()}});
 $('#logo').innerHTML=logoSVG(52);
 document.addEventListener('eleve-change',()=>reload());

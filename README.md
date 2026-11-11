@@ -4,7 +4,7 @@ L'élève enregistre ses matchs, gagne de l'expérience, monte de niveau (Bronze
 
 Dépôt conseillé : `BallStar_Eleves` → https://vinztoc.github.io/BallStar_Eleves/
 
-## Gain d'XP (réglable par le professeur)
+## Gain d'XP (réglable par le professeur dans Ball Star Prof)
 | Source | Par défaut |
 |---|---|
 | Match joué | +10 XP |
@@ -17,10 +17,12 @@ Niveaux : Bronze (0), Argent (150), Or (400), Star (750 XP). Chaque niveau débl
 ## Défis spéciaux (un avatar bonus chacun)
 Série de feu (3 victoires d'affilée) · Tour du monde (5 adversaires différents) · Œil de lynx (5 observables réussis) · Increvable (10 matchs) · Rouleau compresseur (victoire avec le plus gros bonus d'écart) · Maîtrise totale (3 observables réussis d'affilée).
 
-## Observables
-- Le professeur règle la liste par activité (⚙️), et peut imposer un observable à la classe.
-- Sinon l'élève choisit dans la liste ou écrit le sien.
-- Diffusion : ⚙️ → « Exporter les réglages » produit `BallStar_Reglages.xlsx` (feuille `BallStar_Config`, modifiable dans un tableur). Les élèves l'importent depuis l'écran « Match ».
+## Réglages : uniquement dans Ball Star Prof
+- L'élève **ne peut pas modifier** le barème ni les observables : l'onglet Défis affiche les « Règles du jeu » en lecture seule.
+- Le professeur règle le jeu dans **Ball Star Prof** (https://vinztoc.github.io/BallStar_Prof/) et exporte `BallStar_Reglages_<code>.xlsx`.
+- L'élève l'importe (onglet Défis ou écran Match). Un fichier modifié à la main est refusé (code de contrôle).
+- Chaque match enregistre le code des réglages utilisés (colonne « Réglages »).
+- De toute façon, Ball Star Prof recalcule l'XP avec les réglages du professeur.
 
 ## Données (consignes du portail)
 - Identification par `eleve-core.js` (nom, prénom, classe issus du portail Applis EPS Élèves, sinon saisis par l'élève).
@@ -31,7 +33,7 @@ Série de feu (3 victoires d'affilée) · Tour du monde (5 adversaires différen
 
 ## Mise à jour
 `APP_VERSION` dans `version.js` et `VERSION` dans `sw.js`. Fonctionne hors ligne (PWA).
-`eps-core.js` et `eleve-core.js` sont des copies de celles du portail : les recopier si le portail évolue.
+`eps-core.js` et `eleve-core.js` sont des copies de celles du portail : les recopier si le portail évolue. `bs-rules.js` doit rester identique à celui de BallStar_Prof.
 
 ## Ajout au portail
 Dans `apps.json` du dépôt `Applis_EPS_Eleves`, ajouter (et copier `icons/icon-192-BallStar.png` dans `icons/` du portail) :

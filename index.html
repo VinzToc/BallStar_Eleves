@@ -16,7 +16,6 @@
 </head><body>
 <div class="wrap">
 <header class="top"><span class="lg" id="logo"></span><div><h1>BALL <span>STAR</span></h1><p>Raquettes &amp; combat · le challenge</p></div><span class="sp"></span>
- <button class="ib" id="bProf" title="Réglages du professeur" aria-label="Réglages du professeur">⚙️</button>
  <a class="ib" href="https://vinztoc.github.io/Applis_EPS_Eleves/" title="Retour au portail Applis EPS Élèves" aria-label="Retour au portail">↩</a></header>
 <div id="who" class="who"></div>
 
@@ -62,6 +61,9 @@
 <!-- DÉFIS -->
 <section id="vDefis" hidden>
  <div class="card"><h2>Niveaux</h2><div id="lvlList"></div></div>
+ <div class="card"><h2>Règles du jeu</h2><p class="mut" style="margin-top:-4px">🔒 <span id="rSrc"></span>. Seul ton professeur peut changer ces règles, les mêmes pour toute la classe.</p>
+  <div class="prev" id="rXP" style="margin-top:6px"></div>
+  <div class="row" style="margin-top:12px"><button class="btn g" id="rImp">📥 Importer le fichier de réglages du prof</button></div></div>
  <div class="card"><h2>Défis spéciaux</h2><p class="mut" style="margin-top:-4px">Chaque défi réussi débloque un avatar bonus.</p><div id="defiList"></div></div>
 </section>
 
@@ -82,26 +84,6 @@
  </div>
 </section>
 
-<!-- RÉGLAGES PROF -->
-<section id="vProf" hidden>
- <div class="card"><h2>⚙️ Réglages du professeur</h2>
-  <p class="mut" style="margin-top:-4px">Préparez les réglages une fois, exportez le fichier et donnez-le aux élèves (ENT, partage, clé). Ils l'importent depuis l'écran « Match ». Les matchs déjà joués gardent l'XP gagnée.</p>
-  <div class="row"><button class="btn v" id="pExport">⬇️ Exporter les réglages (.xlsx)</button><button class="btn g" id="pImport">📥 Importer des réglages</button><button class="btn g" id="pReset">↺ Réglages par défaut</button></div>
-  <input type="file" id="cfgFile" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
- </div>
- <div class="card"><h2>Gain d'expérience</h2>
-  <div class="grid3"><label class="f">Match joué (XP)<input type="number" id="pJoue" min="0" max="500"></label><label class="f">Victoire (XP)<input type="number" id="pVict" min="0" max="500"></label><label class="f">Observable réussi (XP)<input type="number" id="pBonus" min="0" max="500"></label></div>
-  <h3>Bonus d'écart au score (seulement en cas de victoire)</h3>
-  <div id="pEcart"></div>
-  <h3>Seuils des niveaux (XP totale)</h3>
-  <div class="grid3"><label class="f">🥈 Argent<input type="number" id="pS1" min="1"></label><label class="f">🥇 Or<input type="number" id="pS2" min="1"></label><label class="f">⭐ Star<input type="number" id="pS3" min="1"></label></div>
- </div>
- <div class="card"><h2>Observables</h2>
-  <p class="mut" style="margin-top:-4px">Un observable par ligne. Choisissez « Libre » pour laisser l'élève choisir dans la liste (ou écrire le sien), ou imposez un observable pour toute la classe.</p>
-  <div class="acts" id="pActs"></div>
- </div>
- <div class="row" style="margin-bottom:16px"><button class="btn big" id="pSave">💾 Enregistrer les réglages</button></div>
-</section>
 </main>
 </div>
 
@@ -113,11 +95,13 @@
  <button data-go="vBilan"><span class="e">📊</span>Bilan</button>
 </div></nav>
 <div id="modal"></div>
+<input type="file" id="cfgFile" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
 
 <script src="version.js"></script>
 <script src="eps-core.js"></script>
 <script src="eleve-core.js"></script>
 <script src="bs-xlsx.js"></script>
+<script src="bs-rules.js"></script>
 <script src="bs-art.js"></script>
 <script src="ballstar.js"></script>
 </body></html>
