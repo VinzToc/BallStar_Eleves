@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Ball Star</title>
+<meta name="description" content="Le challenge des sports de raquette et de combat : joue, gagne de l'XP, débloque des avatars.">
+<meta name="theme-color" content="#12062b">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@600;800;900&display=swap">
+<link rel="stylesheet" href="ballstar.css">
+</head><body>
+<div class="wrap">
+<header class="top"><span class="lg" id="logo"></span><div><h1>BALL <span>STAR</span></h1><p>Raquettes &amp; combat · le challenge</p></div><span class="sp"></span>
+ <button class="ib" id="bProf" title="Réglages du professeur" aria-label="Réglages du professeur">⚙️</button>
+ <a class="ib" href="https://vinztoc.github.io/Applis_EPS_Eleves/" title="Retour au portail Applis EPS Élèves" aria-label="Retour au portail">↩</a></header>
+<div id="who" class="who"></div>
+
+<main>
+<!-- ARÈNE -->
+<section id="vArene">
+ <div class="card hero" id="hero"></div>
+ <button class="btn big" data-go="vMatch">⚔️ Nouveau match</button>
+ <div class="card" style="margin-top:14px"><h2>Prochain défi</h2><div id="nextDefi"></div></div>
+ <div class="card"><h2>Derniers matchs</h2><div class="mlist" id="lastMatchs"></div></div>
+</section>
+
+<!-- MATCH -->
+<section id="vMatch" hidden>
+ <div class="card">
+  <div class="step"><i>1</i> Avant le match</div>
+  <h3 style="margin-top:0">Activité</h3>
+  <div class="chips" id="mAct"></div>
+  <label class="f" for="mAdv">Mon adversaire (nom, prénom)</label>
+  <input type="text" id="mAdv" list="advList" autocomplete="off" maxlength="60" placeholder="ex. Léa MARTIN">
+  <datalist id="advList"></datalist>
+  <h3>Mon observable</h3>
+  <div id="mObsZone"></div>
+ </div>
+ <div class="card">
+  <div class="step"><i>2</i> Après le match</div>
+  <div class="score">
+   <div class="sbox me"><div class="lb">Moi</div><div class="ctl"><button type="button" data-s="me" data-d="-1" aria-label="Retirer un point">−</button><input type="number" id="sMe" min="0" max="999" value="0" inputmode="numeric" aria-label="Mon score"><button type="button" data-s="me" data-d="1" aria-label="Ajouter un point">+</button></div></div>
+   <div class="vs">VS</div>
+   <div class="sbox"><div class="lb" id="advLb">Adversaire</div><div class="ctl"><button type="button" data-s="adv" data-d="-1" aria-label="Retirer un point à l'adversaire">−</button><input type="number" id="sAdv" min="0" max="999" value="0" inputmode="numeric" aria-label="Score de l'adversaire"><button type="button" data-s="adv" data-d="1" aria-label="Ajouter un point à l'adversaire">+</button></div></div>
+  </div>
+  <h3>Mon observable est-il réussi ?</h3>
+  <div class="seg" id="mOk"><button type="button" data-v="Oui">✅ Oui</button><button type="button" data-v="Non" class="no">❌ Non</button></div>
+  <h3>Validé par</h3>
+  <div class="seg" id="mVal"><button type="button" data-v="Adversaire">🤝 Adversaire</button><button type="button" data-v="Observateur">👀 Observateur</button><button type="button" data-v="Moi-même">🙋 Moi-même</button></div>
+  <div class="prev" id="mPrev"></div>
+  <div style="margin-top:14px"><button class="btn big" id="mSave">⭐ Valider le match</button></div>
+  <p class="mut" id="mErr" style="color:var(--ko);font-weight:800;min-height:1.2em;margin:8px 0 0"></p>
+ </div>
+ <p class="mut" style="text-align:center">Ton prof t'a donné un fichier de réglages ? <button class="btn g" id="mImpCfg" style="padding:6px 12px;font-size:.8rem">📥 Importer les réglages</button></p>
+</section>
+
+<!-- DÉFIS -->
+<section id="vDefis" hidden>
+ <div class="card"><h2>Niveaux</h2><div id="lvlList"></div></div>
+ <div class="card"><h2>Défis spéciaux</h2><p class="mut" style="margin-top:-4px">Chaque défi réussi débloque un avatar bonus.</p><div id="defiList"></div></div>
+</section>
+
+<!-- AVATARS -->
+<section id="vAvatars" hidden>
+ <div class="card"><h2>Mes avatars <span id="avCount" class="mut"></span></h2><p class="mut" style="margin-top:-4px">Touche un avatar débloqué pour le choisir. Les silhouettes se débloquent avec les niveaux et les défis.</p><div class="agrid" id="avGrid"></div></div>
+</section>
+
+<!-- BILAN -->
+<section id="vBilan" hidden>
+ <div class="card"><h2>Synthèse</h2><div class="stats" id="bStats" style="margin-top:0"></div></div>
+ <div class="card"><h2>Par activité</h2><div class="tbl" id="bAct"></div></div>
+ <div class="card"><h2>Mes observables</h2><div class="tbl" id="bObs"></div></div>
+ <div class="card"><h2>Historique</h2><div class="mlist" id="bHist"></div></div>
+ <div class="card"><h2>Sauvegarde</h2>
+  <p class="mut" style="margin-top:-4px">Tes matchs sont aussi enregistrés automatiquement dans le portail Applis EPS Élèves (onglet « ballstar » de ton fichier). Exporte ton fichier pour le garder sur ton appareil ou le remettre à ton professeur.</p>
+  <div class="row"><button class="btn" id="bExport">⬇️ Exporter mes données (.xlsx)</button><button class="btn r" id="bClear">🗑️ Effacer mes données</button></div>
+ </div>
+</section>
+
+<!-- RÉGLAGES PROF -->
+<section id="vProf" hidden>
+ <div class="card"><h2>⚙️ Réglages du professeur</h2>
+  <p class="mut" style="margin-top:-4px">Préparez les réglages une fois, exportez le fichier et donnez-le aux élèves (ENT, partage, clé). Ils l'importent depuis l'écran « Match ». Les matchs déjà joués gardent l'XP gagnée.</p>
+  <div class="row"><button class="btn v" id="pExport">⬇️ Exporter les réglages (.xlsx)</button><button class="btn g" id="pImport">📥 Importer des réglages</button><button class="btn g" id="pReset">↺ Réglages par défaut</button></div>
+  <input type="file" id="cfgFile" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
+ </div>
+ <div class="card"><h2>Gain d'expérience</h2>
+  <div class="grid3"><label class="f">Match joué (XP)<input type="number" id="pJoue" min="0" max="500"></label><label class="f">Victoire (XP)<input type="number" id="pVict" min="0" max="500"></label><label class="f">Observable réussi (XP)<input type="number" id="pBonus" min="0" max="500"></label></div>
+  <h3>Bonus d'écart au score (seulement en cas de victoire)</h3>
+  <div id="pEcart"></div>
+  <h3>Seuils des niveaux (XP totale)</h3>
+  <div class="grid3"><label class="f">🥈 Argent<input type="number" id="pS1" min="1"></label><label class="f">🥇 Or<input type="number" id="pS2" min="1"></label><label class="f">⭐ Star<input type="number" id="pS3" min="1"></label></div>
+ </div>
+ <div class="card"><h2>Observables</h2>
+  <p class="mut" style="margin-top:-4px">Un observable par ligne. Choisissez « Libre » pour laisser l'élève choisir dans la liste (ou écrire le sien), ou imposez un observable pour toute la classe.</p>
+  <div class="acts" id="pActs"></div>
+ </div>
+ <div class="row" style="margin-bottom:16px"><button class="btn big" id="pSave">💾 Enregistrer les réglages</button></div>
+</section>
+</main>
+</div>
+
+<nav class="tabs" aria-label="Navigation"><div class="in">
+ <button data-go="vArene" class="on"><span class="e">🏟️</span>Arène</button>
+ <button data-go="vDefis"><span class="e">🎯</span>Défis</button>
+ <button data-go="vMatch" class="cta"><span class="e">⚔️</span>Match</button>
+ <button data-go="vAvatars"><span class="e">🦸</span>Avatars</button>
+ <button data-go="vBilan"><span class="e">📊</span>Bilan</button>
+</div></nav>
+<div id="modal"></div>
+
+<script src="version.js"></script>
+<script src="eps-core.js"></script>
+<script src="eleve-core.js"></script>
+<script src="bs-xlsx.js"></script>
+<script src="bs-art.js"></script>
+<script src="ballstar.js"></script>
+</body></html>
