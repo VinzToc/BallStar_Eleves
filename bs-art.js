@@ -68,8 +68,12 @@ function avatarSVG(a,opt={}){
  <rect x="50" y="46" width="100" height="96" rx="40" fill="${a.skin}" ${S()}/>
  <ellipse cx="66" cy="112" rx="9" ry="6" fill="#ff7a9c55"/><ellipse cx="134" cy="112" rx="9" ry="6" fill="#ff7a9c55"/>
  <rect x="50" y="46" width="100" height="96" rx="40" fill="url(#${id})"/>
- ${HEADS[a.head](a)}${eyes(a)}${mouth(a)}${(ITEMS[a.item]||ITEMS.none)(a.item_c)}
+ ${HEADS[a.head](a)}${eyes(a)}${mouth(a)}${(ITEMS[a.item]||ITEMS.none)(a.item_c)}${opt.locked?'':etoiles(opt.stars)}
 </svg>`}
+/* Petites étoiles de palier (1 à 3) en haut à droite de l'avatar */
+const STAR='M0 -12 l3.5 7.6 8.3 .9 -6.2 5.6 1.8 8.2 -7.4 -4.3 -7.4 4.3 1.8 -8.2 -6.2 -5.6 8.3 -.9z';
+function etoiles(n){n=Math.max(0,Math.min(3,n|0));if(!n)return'';const pos=[[184,18],[184,46],[160,16]];
+ return pos.slice(0,n).map(([x,y])=>`<path transform="translate(${x} ${y})" d="${STAR}" fill="#ffe14a" stroke="${OL}" stroke-width="3.5" stroke-linejoin="round"/>`).join('')}
 
 /* ── Niveaux ── */
 const NIVEAUX=[

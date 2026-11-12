@@ -179,3 +179,21 @@ td.n{text-align:right;font-variant-numeric:tabular-nums;font-weight:800}
 .confetti span{position:absolute;top:-10px;width:8px;height:14px;border-radius:2px;animation:fall 1.8s ease-in forwards}
 @keyframes fall{to{transform:translateY(520px) rotate(540deg);opacity:0}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* v1.3 : étoiles des défis, règles en pop-up, compteur d'observables */
+.stars{color:var(--y);letter-spacing:.06em;font-size:.95em;white-space:nowrap;text-shadow:0 0 8px #ffe14a66}
+.stars.big{font-size:2rem;margin:2px 0}
+.pal{display:flex!important;flex-wrap:wrap;gap:4px 10px;margin-top:4px}
+.pal span{opacity:.45}.pal span.on{opacity:1;color:var(--y)}.pal .cur{opacity:1;margin-left:auto;color:var(--tx)}
+.arow{margin-top:10px}.arow .btn{flex:1;min-width:150px}
+.mbox{max-height:calc(100dvh - 32px);overflow-y:auto}
+.regles{text-align:left}.regles h2{text-align:center}.regles h3{margin-top:14px}
+.regles .prev{margin-top:4px}.regles .prev div{gap:10px}
+.rl{display:block;color:var(--mut);font-weight:700;margin-top:2px}
+.obsctl{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.obsctl input{width:76px;margin:0;text-align:center;font-family:var(--fd);font-size:1.8rem;padding:4px}
+.obsctl button{width:44px;height:44px;border-radius:12px;border:2px solid var(--ol);background:var(--v);color:#fff;font-size:1.4rem;font-weight:900;cursor:pointer;box-shadow:0 3px 0 var(--ol)}
+.obsctl .mut{flex-basis:100%;font-size:.78rem}
+.stars .off{color:#ffffff30;text-shadow:none}
+.prev div span:last-child{white-space:nowrap;flex:none}
+.prev div{gap:10px}

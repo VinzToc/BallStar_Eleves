@@ -1,6 +1,6 @@
 /* Service worker Ball Star – tout est mis en cache : l'app fonctionne sans réseau.
    Pour publier une mise à jour : changer VERSION ci-dessous (et APP_VERSION dans version.js). */
-const VERSION='1.1.0';
+const VERSION='1.3.0';
 const CACHE='ballstar-eleves-'+VERSION;
 const CORE=["./","index.html","ballstar.js","ballstar.css","bs-art.js","bs-rules.js","bs-xlsx.js","eps-core.js","eleve-core.js","version.js","manifest.webmanifest","icons/icon-192.png","icons/icon-512.png","icons/icon-maskable-512.png","icons/apple-touch-icon.png"];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()))});

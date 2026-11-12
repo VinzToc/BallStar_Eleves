@@ -24,6 +24,7 @@
 <section id="vArene">
  <div class="card hero" id="hero"></div>
  <button class="btn big" data-go="vMatch">⚔️ Nouveau match</button>
+ <div class="row arow"><button class="btn v" id="aRegles">📜 Règles du jeu</button><button class="btn g" id="aImp">📥 Importer les règles du prof</button></div>
  <div class="card" style="margin-top:14px"><h2>Prochain défi</h2><div id="nextDefi"></div></div>
  <div class="card"><h2>Derniers matchs</h2><div class="mlist" id="lastMatchs"></div></div>
 </section>
@@ -47,24 +48,20 @@
    <div class="vs">VS</div>
    <div class="sbox"><div class="lb" id="advLb">Adversaire</div><div class="ctl"><button type="button" data-s="adv" data-d="-1" aria-label="Retirer un point à l'adversaire">−</button><input type="number" id="sAdv" min="0" max="999" value="0" inputmode="numeric" aria-label="Score de l'adversaire"><button type="button" data-s="adv" data-d="1" aria-label="Ajouter un point à l'adversaire">+</button></div></div>
   </div>
-  <h3>Mon observable est-il réussi ?</h3>
-  <div class="seg" id="mOk"><button type="button" data-v="Oui">✅ Oui</button><button type="button" data-v="Non" class="no">❌ Non</button></div>
-  <h3>Validé par</h3>
+  <h3>Nombre d'observables validés pendant le match</h3>
+  <div class="obsctl"><button type="button" data-o="-1" aria-label="Un observable de moins">−</button><input type="number" id="nObs" min="0" max="99" value="0" inputmode="numeric" aria-label="Nombre d'observables validés"><button type="button" data-o="1" aria-label="Un observable de plus">+</button><span class="mut" id="nObsMax"></span></div>
+  <h3>Observables validés par</h3>
   <div class="seg" id="mVal"><button type="button" data-v="Adversaire">🤝 Adversaire</button><button type="button" data-v="Observateur">👀 Observateur</button><button type="button" data-v="Moi-même">🙋 Moi-même</button></div>
   <div class="prev" id="mPrev"></div>
   <div style="margin-top:14px"><button class="btn big" id="mSave">⭐ Valider le match</button></div>
   <p class="mut" id="mErr" style="color:var(--ko);font-weight:800;min-height:1.2em;margin:8px 0 0"></p>
  </div>
- <p class="mut" style="text-align:center">Ton prof t'a donné un fichier de réglages ? <button class="btn g" id="mImpCfg" style="padding:6px 12px;font-size:.8rem">📥 Importer les réglages</button></p>
 </section>
 
 <!-- DÉFIS -->
 <section id="vDefis" hidden>
  <div class="card"><h2>Niveaux</h2><div id="lvlList"></div></div>
- <div class="card"><h2>Règles du jeu</h2><p class="mut" style="margin-top:-4px">🔒 <span id="rSrc"></span>. Seul ton professeur peut changer ces règles, les mêmes pour toute la classe.</p>
-  <div class="prev" id="rXP" style="margin-top:6px"></div>
-  <div class="row" style="margin-top:12px"><button class="btn g" id="rImp">📥 Importer le fichier de réglages du prof</button></div></div>
- <div class="card"><h2>Défis spéciaux</h2><p class="mut" style="margin-top:-4px">Chaque défi réussi débloque un avatar bonus.</p><div id="defiList"></div></div>
+ <div class="card"><h2>Défis spéciaux</h2><p class="mut" style="margin-top:-4px">Chaque défi a 3 étoiles : la 1re débloque un avatar bonus, la 2e et la 3e s'affichent sur l'avatar.</p><div id="defiList"></div></div>
 </section>
 
 <!-- AVATARS -->

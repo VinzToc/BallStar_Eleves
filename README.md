@@ -10,17 +10,29 @@ Dépôt conseillé : `BallStar_Eleves` → https://vinztoc.github.io/BallStar_El
 | Match joué | +10 XP |
 | Victoire | +25 XP |
 | Écart au score (victoire seulement) | ≥ 3 pts : +5 · ≥ 6 pts : +10 · ≥ 10 pts : +15 |
-| Observable réussi (validé par l'adversaire, un observateur ou l'élève) | +5 XP |
+| Chaque observable validé pendant le match (par l'adversaire, un observateur ou l'élève) | +5 XP, 5 au maximum par match |
 
 Niveaux : Bronze (0), Argent (150), Or (400), Star (750 XP). Chaque niveau débloque un avatar.
 
-## Défis spéciaux (un avatar bonus chacun)
-Série de feu (3 victoires d'affilée) · Tour du monde (5 adversaires différents) · Œil de lynx (5 observables réussis) · Increvable (10 matchs) · Rouleau compresseur (victoire avec le plus gros bonus d'écart) · Maîtrise totale (3 observables réussis d'affilée).
+## Défis spéciaux : 3 étoiles chacun
+La 1re étoile débloque l'avatar du défi, la 2e et la 3e s'affichent en haut à droite de l'avatar. Paliers par défaut (modifiables dans Ball Star Prof) :
+
+| Défi (avatar) | ★ | ★★ | ★★★ |
+|---|---|---|---|
+| Série de feu (Combo) : victoires d'affilée | 3 | 5 | 7 |
+| Tour du monde (Globe) : adversaires différents | 5 | 8 | 12 |
+| Œil de lynx (Lynx) : observables validés | 5 | 15 | 30 |
+| Increvable (Turbo) : matchs joués | 10 | 20 | 35 |
+| Rouleau compresseur (Titan) : victoires avec le plus gros bonus d'écart | 1 | 3 | 5 |
+| Maîtrise totale (Zen) : matchs d'affilée avec au moins un observable validé | 3 | 5 | 8 |
+
+## Arène
+Boutons « 📜 Règles du jeu » (pop-up avec le barème, les niveaux et les paliers des défis) et « 📥 Importer les règles du prof ».
 
 ## Réglages : uniquement dans Ball Star Prof
-- L'élève **ne peut pas modifier** le barème ni les observables : l'onglet Défis affiche les « Règles du jeu » en lecture seule.
+- L'élève **ne peut pas modifier** le barème ni les observables : le bouton « Règles du jeu » de l'Arène les affiche en lecture seule.
 - Le professeur règle le jeu dans **Ball Star Prof** (https://vinztoc.github.io/BallStar_Prof/) et exporte `BallStar_Reglages_<code>.xlsx`.
-- L'élève l'importe (onglet Défis ou écran Match). Un fichier modifié à la main est refusé (code de contrôle).
+- L'élève l'importe depuis l'Arène. Un fichier modifié à la main est refusé (code de contrôle).
 - Chaque match enregistre le code des réglages utilisés (colonne « Réglages »).
 - De toute façon, Ball Star Prof recalcule l'XP avec les réglages du professeur.
 
