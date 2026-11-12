@@ -195,7 +195,6 @@ $('#cfgFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(
 /* ───────── Rendu global & démarrage ───────── */
 function renderAll(){renderArene();renderDefis();renderAvatars();renderBilan();if(!$('#vMatch').hidden)renderMatchForm()}
 document.addEventListener('click',async e=>{if(e.target.id==='bIdent'&&window.ELEVE){ELEVE.changer();await ELEVE.demander();reload()}});
-$('#logo').innerHTML=logoSVG(52);
 document.addEventListener('eleve-change',()=>reload());
 (async()=>{try{if(window.ELEVE){ELEVE.bandeau($('#who'));await reload();if(!ME)await ELEVE.demander();await reload()}else renderAll()}catch(e){console.error(e);renderAll()}})();
 if('serviceWorker' in navigator&&location.protocol==='https:'&&!window.BALLSTAR_NO_SW)navigator.serviceWorker.register('sw.js').catch(()=>{});
