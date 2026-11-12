@@ -15,7 +15,7 @@
 <link rel="stylesheet" href="ballstar.css">
 </head><body>
 <div class="wrap">
-<header class="top"><img class="lg" id="logo" src="icons/icon-192.png" alt="" width="52" height="52" style="border-radius:12px"><div><h1>BALL <span>STAR</span></h1><p>Raquettes &amp; combat · le challenge</p></div><span class="sp"></span>
+<header class="top"><img class="lg" id="logo" src="icons/icon-192.png" alt="" width="52" height="52" style="border-radius:12px"><div><h1>BALL <span>STAR</span></h1><p>Raquettes &amp; combat · le challenge<span id="ver"></span></p></div><span class="sp"></span>
  <a class="ib" href="https://vinztoc.github.io/Applis_EPS_Eleves/" title="Retour au portail Applis EPS Élèves" aria-label="Retour au portail">↩</a></header>
 <div id="who" class="who"></div>
 
@@ -95,6 +95,7 @@
 <input type="file" id="cfgFile" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
 
 <script src="version.js"></script>
+<script>document.getElementById('ver').textContent=' · v'+APP_VERSION</script>
 <script src="eps-core.js"></script>
 <script src="eleve-core.js"></script>
 <script src="bs-xlsx.js"></script>
