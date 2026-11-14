@@ -9,23 +9,31 @@ const N=v=>{const n=Number(v);return isFinite(n)?n:0};
 const norm=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
 const clone=o=>JSON.parse(JSON.stringify(o));
 
-const ACTS=[{n:'Tennis de table',e:'🏓'},{n:'Badminton',e:'🏸'},{n:'Tennis',e:'🎾'},{n:'Sports de combat',e:'🥋'}];
+const ACTS=[{n:'Tennis de table',e:'🏓'},{n:'Badminton',e:'🏸'},{n:'Tennis',e:'🎾'},{n:'Pickleball',e:'🥒'},{n:'Padel',e:'🪟'},{n:'Boxe française',e:'🥊'},{n:'Lutte',e:'🤼'},{n:'Judo',e:'🥋'}];
 const NIV=['Bronze','Argent','Or','Star'];
 /* Défis spéciaux : 3 paliers (1, 2, 3 étoiles). La 1re étoile débloque l'avatar ; les suivantes ajoutent des étoiles dessus. */
-const DEFIS_DEF={combo:[3,5,7],globe:[5,8,12],lynx:[5,15,30],turbo:[10,20,35],titan:[1,3,5],zen:[3,5,8]};
-const DEF={xp:{joue:10,victoire:25,bonus:5,maxObs:5},ecart:[[3,5],[6,10],[10,15]],seuils:[0,150,400,750],defis:DEFIS_DEF,
+const DEFIS_DEF={combo:[4,7,10],globe:[6,10,15],lynx:[20,50,100],turbo:[15,35,60],titan:[3,8,15],zen:[5,10,15]};
+/* Avatars légendaires : débloqués par le total d'étoiles gagnées dans les défis (sur 18). */
+const LEGENDES_DEF=[6,10,14,18];
+/* Bonus BallStar par défaut : actions motrices valorisées pendant les matchs-défis (10 par APSA). */
+const DEF={xp:{joue:10,victoire:25,bonus:5,maxObs:5},ecart:[[3,5],[6,10],[10,15]],seuils:[0,500,1000,1500],defis:DEFIS_DEF,legendes:LEGENDES_DEF,
  acts:{
-  'Tennis de table':{impose:'',obs:['Faire déplacer mon adversaire','Varier les trajectoires (long / court, gauche / droite)','Varier mes services','Jouer en revers quand il le faut','Accélérer sur une balle haute']},
-  'Badminton':{impose:'',obs:['Faire déplacer mon adversaire aux 4 coins','Alterner jeu long et jeu court','Smasher sur un volant haut','Revenir au centre après chaque frappe','Servir long et haut']},
-  'Tennis':{impose:'',obs:['Faire déplacer mon adversaire','Jouer en revers quand il le faut','Monter au filet pour conclure','Varier la longueur de balle','Réussir mes premières balles de service']},
-  'Sports de combat':{impose:'',obs:['Conserver ma garde','Déséquilibrer avant d\'attaquer','Enchaîner deux actions','Rester dans la zone de combat','Contrôler mon adversaire au sol']}
+  'Tennis de table':{impose:'',obs:['Varier la longueur du service','Gagner le point au service','Gagner le point balle envoyée à droite','Gagner le point balle envoyée à gauche','Réaliser un coup droit offensif (balle accélérée)','Réaliser un revers offensif (balle accélérée)','Alterner droite, gauche et droite','Réaliser une balle courte (amorti)','Réaliser une frappe rapide (smash)','Marquer sur une balle placée']},
+  'Badminton':{impose:'',obs:['Marquer sur un service court','Marquer sur un service long','Réaliser un dégagement','Réaliser un amorti','Réaliser un smash','Jouer un volant croisé','Alterner avant, arrière et avant','Réaliser un contre-amorti','Se replacer après une frappe','Marquer dans un espace libre']},
+  'Tennis':{impose:'',obs:['Réussir ma première balle de service','Gagner le point au service','Réaliser un coup droit croisé','Réaliser un revers croisé','Jouer une balle longue en fond de court','Réaliser une amortie','Monter au filet et conclure à la volée','Alterner droite et gauche','Se replacer au centre après une frappe','Marquer dans un espace libre']},
+  'Pickleball':{impose:'',obs:['Réaliser un service profond','Réaliser un coup droit placé','Réaliser un revers placé','Réaliser un retour de service profond','Réaliser un dink','Réaliser une volée contrôlée','Réaliser un troisième coup amorti','Alterner une balle courte et longue','Se replacer avec son partenaire','Marquer dans un espace libre']},
+  'Padel':{impose:'',obs:['Réaliser un service réglementaire','Réaliser un coup droit placé','Réaliser un revers placé','Réaliser un lob','Réaliser une volée','Jouer après un rebond sur la vitre','Réaliser une bandeja','Alterner une balle courte et longue','Se replacer avec son partenaire','Marquer dans un espace libre']},
+  'Boxe française':{impose:'',obs:['Toucher avec un direct du bras avant','Toucher avec un direct du bras arrière','Réaliser un fouetté médian','Réaliser un chassé médian','Réaliser un revers de pied','Enchaîner deux touches différentes','Enchaîner pied et poing','Esquiver une attaque','Parer puis riposter','Toucher après un déplacement (décalage)']},
+  'Lutte':{impose:'',obs:['Saisir efficacement l\'adversaire','Déséquilibrer vers l\'avant','Déséquilibrer vers l\'arrière','Faire sortir de la zone','Passer derrière l\'adversaire','Réaliser une amenée au sol','Retourner un adversaire au sol','Immobiliser l\'adversaire','Se dégager d\'un contrôle','Enchaîner deux actions offensives']},
+  'Judo':{impose:'',obs:['Installer une garde efficace','Déséquilibrer vers l\'avant','Déséquilibrer vers l\'arrière','Réaliser un déplacement préparatoire','Engager une technique de jambe','Réaliser une projection maîtrisée','Enchaîner deux attaques','Réaliser une transition debout-sol','Immobiliser au sol','Sortir d\'une immobilisation']}
  }};
 
 /* Remet un objet de réglages dans une forme propre et complète (ordre des clés fixe → code de contrôle stable). */
 function clean(c){c=c||{};const d=clone(DEF),x=c.xp||{};
  const out={xp:{joue:N(x.joue??d.xp.joue),victoire:N(x.victoire??d.xp.victoire),bonus:N(x.bonus??d.xp.bonus),maxObs:Math.max(1,N(x.maxObs??d.xp.maxObs))},
   ecart:(Array.isArray(c.ecart)?c.ecart:d.ecart).map(e=>[N(e[0]),N(e[1])]).filter(e=>e[0]>0).sort((a,b)=>a[0]-b[0]),
-  seuils:Array.isArray(c.seuils)&&c.seuils.length===4?[0,N(c.seuils[1]),N(c.seuils[2]),N(c.seuils[3])]:d.seuils,defis:{},acts:{}};
+  seuils:Array.isArray(c.seuils)&&c.seuils.length===4?[0,N(c.seuils[1]),N(c.seuils[2]),N(c.seuils[3])]:d.seuils,defis:{},legendes:[],acts:{}};
+ {const v=c.legendes;out.legendes=Array.isArray(v)&&v.length===4&&v.every(z=>N(z)>0)?v.map(N):LEGENDES_DEF.slice()}
  for(const k of Object.keys(DEFIS_DEF)){const v=(c.defis||{})[k];out.defis[k]=Array.isArray(v)&&v.length===3&&v.every(z=>N(z)>0)?v.map(N):DEFIS_DEF[k].slice()}
  for(const a of ACTS){const s=(c.acts||{})[a.n]||{},obs=Array.isArray(s.obs)&&s.obs.length?[...new Set(s.obs.map(o=>String(o).trim()).filter(Boolean))]:d.acts[a.n].obs;
   out.acts[a.n]={impose:String(s.impose||'').trim(),obs}}
@@ -60,10 +68,10 @@ function streak(rows,f){let m=0,c=0;for(const r of rows){if(f(r)){c++;m=Math.max
 const DEFIS=[
  {id:'combo',nom:'Série de feu',desc:n=>`Gagner ${n} matchs d'affilée`,val:(R)=>streak(R,isWin)},
  {id:'globe',nom:'Tour du monde',desc:n=>`Affronter ${n} adversaires différents`,val:(R)=>new Set(R.map(r=>norm(r.Adversaire)).filter(Boolean)).size},
- {id:'lynx',nom:'Œil de lynx',desc:n=>`Faire valider ${n} observables`,val:(R,cfg)=>R.reduce((s,r)=>s+Math.min(nbObs(r),cfg.xp.maxObs),0)},
+ {id:'lynx',nom:'Œil de lynx',desc:n=>`Faire valider ${n} bonus BallStar`,val:(R,cfg)=>R.reduce((s,r)=>s+Math.min(nbObs(r),cfg.xp.maxObs),0)},
  {id:'turbo',nom:'Increvable',desc:n=>`Jouer ${n} matchs`,val:(R)=>R.length},
  {id:'titan',nom:'Rouleau compresseur',desc:n=>n>1?`Gagner ${n} matchs avec le plus gros bonus d'écart`:"Gagner un match avec le plus gros bonus d'écart",val:(R,cfg)=>{const m=maxEcartXP(cfg);return m>0?R.filter(r=>isWin(r)&&N(r['XP écart'])>=m).length:0}},
- {id:'zen',nom:'Maîtrise totale',desc:n=>`Valider au moins un observable ${n} matchs d'affilée`,val:(R)=>streak(R,isOk)}
+ {id:'zen',nom:'Maîtrise totale',desc:n=>`Valider au moins un bonus BallStar ${n} matchs d'affilée`,val:(R)=>streak(R,isOk)}
 ];
 /* État d'un défi : étoiles gagnées (0 à 3), palier suivant. */
 function etatDefi(d,cfg,R){const p=cfg.defis[d.id],v=d.val(R,cfg),etoiles=p.filter(b=>v>=b).length,cible=etoiles<3?p[etoiles]:p[2];
@@ -82,25 +90,27 @@ function progression(cfg,rows,opt){opt=opt||{};let R=sortRows(rows);
 
 /* Fichier de réglages (feuille BallStar_Config) */
 const CFG_SHEET='BallStar_Config';
-function versLignes(cfg){cfg=clean(cfg);const r=[['Paramètre','Activité','Valeur','XP'],['XP match joué','','',cfg.xp.joue],['XP victoire','','',cfg.xp.victoire],['XP par observable validé','','',cfg.xp.bonus],['Observables comptés par match (maximum)','',cfg.xp.maxObs,'']];
+function versLignes(cfg){cfg=clean(cfg);const r=[['Paramètre','Activité','Valeur','XP'],['XP match joué','','',cfg.xp.joue],['XP victoire','','',cfg.xp.victoire],['XP par bonus BallStar validé','','',cfg.xp.bonus],['Bonus BallStar comptés par match (maximum)','',cfg.xp.maxObs,'']];
  cfg.ecart.forEach(e=>r.push(['Bonus écart','',e[0],e[1]]));[1,2,3].forEach(i=>r.push(['Seuil niveau',NIV[i],cfg.seuils[i],'']));
  DEFIS.forEach(d=>cfg.defis[d.id].forEach((v,i)=>r.push(['Défi '+(i+1)+' étoile'+(i?'s':''),d.nom,v,''])));
- ACTS.forEach(a=>{const c=cfg.acts[a.n];c.obs.forEach(o=>r.push(['Observable',a.n,o,'']));if(c.impose)r.push(['Observable imposé',a.n,c.impose,''])});
+ cfg.legendes.forEach((v,i)=>r.push(['Avatar légendaire',String(i+1),v,'']));
+ ACTS.forEach(a=>{const c=cfg.acts[a.n];c.obs.forEach(o=>r.push(['Bonus BallStar',a.n,o,'']));if(c.impose)r.push(['Bonus BallStar imposé',a.n,c.impose,''])});
  r.push(['Code de contrôle','',signe(cfg),'']);return r}
 /* Lit la feuille ; retourne {cfg, valide} — valide=false si le code de contrôle manque ou ne correspond pas. */
-function depuisLignes(rows){const c={xp:{},ecart:[],seuils:[0,0,0,0],acts:{},defis:{}};let code='',seen=0;
+function depuisLignes(rows){const c={xp:{},ecart:[],seuils:[0,0,0,0],acts:{},defis:{},legendes:[0,0,0,0]};let code='',seen=0;
  for(const row of rows.slice(1)){const [p,a,v,x]=Array.from(row||[],z=>z==null?'':z),k=norm(p),act=ACTS.find(z=>norm(z.n)===norm(a));
-  if(k==='xpmatchjoue'){c.xp.joue=N(x);seen++}else if(k==='xpvictoire'){c.xp.victoire=N(x);seen++}else if(k==='xpobservablereussi'||k==='xpparobservablevalide'){c.xp.bonus=N(x);seen++}
-  else if(k.startsWith('observablescomptes')){c.xp.maxObs=N(v);seen++}
+  if(k==='xpmatchjoue'){c.xp.joue=N(x);seen++}else if(k==='xpvictoire'){c.xp.victoire=N(x);seen++}else if(k==='xpobservablereussi'||k==='xpparobservablevalide'||k==='xpparbonusballstarvalide'){c.xp.bonus=N(x);seen++}
+  else if(k.startsWith('observablescomptes')||k.startsWith('bonusballstarcomptes')){c.xp.maxObs=N(v);seen++}
+  else if(k==='avatarlegendaire'){const i=N(a)-1;if(i>=0&&i<4){c.legendes[i]=N(v);seen++}}
   else if(/^defi[123]etoiles?$/.test(k)){const d=DEFIS.find(z=>norm(z.nom)===norm(a));if(d){c.defis=c.defis||{};(c.defis[d.id]=c.defis[d.id]||[0,0,0])[N(k[4])-1]=N(v);seen++}}
   else if(k==='bonusecart'){c.ecart.push([N(v),N(x)]);seen++}
   else if(k==='seuilniveau'){const i=NIV.findIndex(n=>norm(n)===norm(a));if(i>0){c.seuils[i]=N(v);seen++}}
-  else if(k==='observable'&&act&&String(v).trim()){c.acts[act.n]=c.acts[act.n]||{obs:[],impose:''};c.acts[act.n].obs.push(String(v).trim());seen++}
-  else if(k==='observableimpose'&&act){c.acts[act.n]=c.acts[act.n]||{obs:[],impose:''};c.acts[act.n].impose=String(v).trim();seen++}
+  else if((k==='observable'||k==='bonusballstar')&&act&&String(v).trim()){c.acts[act.n]=c.acts[act.n]||{obs:[],impose:''};c.acts[act.n].obs.push(String(v).trim());seen++}
+  else if((k==='observableimpose'||k==='bonusballstarimpose')&&act){c.acts[act.n]=c.acts[act.n]||{obs:[],impose:''};c.acts[act.n].impose=String(v).trim();seen++}
   else if(k==='codedecontrole')code=String(v).trim()}
  if(!seen)throw new Error('aucun réglage reconnu');
  if(!c.seuils[1])c.seuils=DEF.seuils.slice();
  const cfg=clean(c);return{cfg,valide:!!code&&code===signe(cfg)}}
 
-window.BSRULES={ACTS,NIV,DEF,DEFIS,DEFIS_DEF,etatDefi,nbObs,clean,isDefault,signe,codeCourt,calcXP,levelOf,maxEcartXP,isWin,isLoss,isOk,sortRows,progression,CFG_SHEET,versLignes,depuisLignes,norm,N};
+window.BSRULES={ACTS,NIV,DEF,DEFIS,DEFIS_DEF,LEGENDES_DEF,etatDefi,nbObs,clean,isDefault,signe,codeCourt,calcXP,levelOf,maxEcartXP,isWin,isLoss,isOk,sortRows,progression,CFG_SHEET,versLignes,depuisLignes,norm,N};
 })();

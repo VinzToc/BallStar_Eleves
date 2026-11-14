@@ -40,7 +40,12 @@ const AVATARS=[
  {id:'lynx',   nom:'Lynx',   titre:'L\'œil qui voit tout', defi:'lynx', skin:'#f6c9a0',hair:'#ff9f1c',acc:'#ffe3c2',acc2:'#fff',shirt:'#8f5bff',head:'ears',item:'paddle',item_c:'#8f5bff',eyes:'cat'},
  {id:'turbo',  nom:'Turbo',  titre:'Le marathonien', defi:'turbo', skin:'#b97a4f',hair:'#39ff88',acc:'#ff6a00',acc2:'#fff',shirt:'#ff6a00',head:'visor',item:'shuttle',item_c:'#ff6a00',eyes:'normal'},
  {id:'titan',  nom:'Titan',  titre:'Le mur imprenable', defi:'titan', skin:'#9c6644',hair:'#120a22',acc:'#5b21d6',acc2:'#ffe14a',shirt:'#3a1a7a',head:'mask',item:'glove',item_c:'#ffe14a',eyes:'angry',mask:true},
- {id:'zen',    nom:'Zen',    titre:'La sage du tatami', defi:'zen', skin:'#ffe0c4',hair:'#1b1230',acc:'#ff3df2',acc2:'#fff',shirt:'#f4f1ff',head:'bun',item:'belt',item_c:'#1b1230',eyes:'calm'}
+ {id:'zen',    nom:'Zen',    titre:'La sage du tatami', defi:'zen', skin:'#ffe0c4',hair:'#1b1230',acc:'#ff3df2',acc2:'#fff',shirt:'#f4f1ff',head:'bun',item:'belt',item_c:'#1b1230',eyes:'calm'},
+ /* Avatars légendaires (aura étoilée) : débloqués avec le total d'étoiles des défis */
+ {id:'comete',   nom:'Comète',   titre:'Légendaire · traînée de lumière', legende:0, skin:'#ffd3ae',hair:'#7fe7ff',acc:'#7fe7ff',acc2:'#fff',shirt:'#0b1e5b',head:'visor',item:'racket',item_c:'#7fe7ff',eyes:'star',aura:'#7fe7ff'},
+ {id:'eclipse',  nom:'Éclipse',  titre:'Légendaire · l\'ombre du ring',   legende:1, skin:'#c08a63',hair:'#0d0620',acc:'#ff3df2',acc2:'#ffe14a',shirt:'#0d0620',head:'mask',item:'glove',item_c:'#ff3df2',eyes:'angry',mask:true,aura:'#ff3df2'},
+ {id:'galaxie',  nom:'Galaxie',  titre:'Légendaire · venue des étoiles',  legende:2, skin:'#f2c38f',hair:'#8f5bff',acc:'#ffe14a',acc2:'#fff',shirt:'#3a1690',head:'bun',item:'paddle',item_c:'#ff3df2',eyes:'cat',aura:'#8f5bff'},
+ {id:'supernova',nom:'Supernova',titre:'Légendaire · la plus brillante',   legende:3, skin:'#8a5634',hair:'#ffe14a',acc:'#ffffff',acc2:'#ff3b5c',shirt:'#ffb000',head:'crown',item:'tennis',item_c:'#ffe14a',eyes:'star',aura:'#ffe14a'}
 ];
 
 function eyes(a){
@@ -63,13 +68,17 @@ function avatarSVG(a,opt={}){
  const id='g'+a.id+(opt.k||'');
  return `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" class="ava${opt.locked?' locked':''}" role="img" aria-label="${a.nom}">
  <defs><radialGradient id="${id}" cx="50%" cy="40%" r="60%"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>
- <path d="M24 200 Q24 146 100 142 Q176 146 176 200 Z" fill="${a.shirt}" ${S()}/>
+ ${a.aura?aura(a,id):''}<path d="M24 200 Q24 146 100 142 Q176 146 176 200 Z" fill="${a.shirt}" ${S()}/>${a.aura?`<path d="M60 176 l4 9 9 1 -7 6 2 9 -8 -5 -8 5 2 -9 -7 -6 9 -1z M140 172 l3 7 7 1 -5 4 1 7 -6 -4 -6 4 1 -7 -5 -4 7 -1z" fill="${a.aura}" opacity=".9"/>`:''}
  <path d="M76 146 L100 170 L124 146" fill="none" stroke="${OL}" stroke-width="5" stroke-linejoin="round"/>
  <rect x="50" y="46" width="100" height="96" rx="40" fill="${a.skin}" ${S()}/>
  <ellipse cx="66" cy="112" rx="9" ry="6" fill="#ff7a9c55"/><ellipse cx="134" cy="112" rx="9" ry="6" fill="#ff7a9c55"/>
  <rect x="50" y="46" width="100" height="96" rx="40" fill="url(#${id})"/>
  ${HEADS[a.head](a)}${eyes(a)}${mouth(a)}${(ITEMS[a.item]||ITEMS.none)(a.item_c)}${opt.locked?'':etoiles(opt.stars)}
 </svg>`}
+/* Aura des avatars légendaires : grande étoile rayonnante + éclats */
+function aura(a,id){const pts=[];for(let i=0;i<16;i++){const r=i%2?58:98,t=-Math.PI/2+i*Math.PI/8;pts.push((100+r*Math.cos(t)).toFixed(1)+','+(100+r*Math.sin(t)).toFixed(1))}
+ return `<defs><radialGradient id="au${id}" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset=".45" stop-color="${a.aura}" stop-opacity=".75"/><stop offset="1" stop-color="${a.aura}" stop-opacity="0"/></radialGradient></defs>
+ <polygon points="${pts.join(' ')}" fill="url(#au${id})"/><circle cx="26" cy="40" r="3" fill="#fff"/><circle cx="178" cy="120" r="2.5" fill="#fff"/><circle cx="34" cy="128" r="2" fill="#fff"/>`}
 /* Petites étoiles de palier (1 à 3) en haut à droite de l'avatar */
 const STAR='M0 -12 l3.5 7.6 8.3 .9 -6.2 5.6 1.8 8.2 -7.4 -4.3 -7.4 4.3 1.8 -8.2 -6.2 -5.6 8.3 -.9z';
 function etoiles(n){n=Math.max(0,Math.min(3,n|0));if(!n)return'';const pos=[[184,18],[184,46],[160,16]];

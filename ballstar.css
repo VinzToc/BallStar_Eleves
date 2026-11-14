@@ -84,7 +84,7 @@ h3{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mu
 .step{display:flex;align-items:center;gap:8px;font-family:var(--fd);font-size:1.15rem;color:var(--y);margin:4px 0 10px}
 .step i{font-style:normal;display:inline-flex;width:28px;height:28px;border-radius:50%;background:var(--y);color:var(--ol);align-items:center;justify-content:center;font-size:1rem}
 .chips{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-@media (max-width:480px){.chips{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:480px){.chip{font-size:.7rem;padding:8px 2px;border-radius:14px}.chip .e{font-size:1.45rem}}
 .chip{border:2px solid var(--line);background:#0004;border-radius:16px;padding:10px 6px;cursor:pointer;text-align:center;font-weight:800;font-size:.82rem;display:flex;flex-direction:column;align-items:center;gap:2px}
 .chip .e{font-size:1.7rem}
 .chip.on{border-color:var(--y);background:#ffe14a1f;box-shadow:0 0 0 2px var(--y) inset,0 0 18px #ffe14a44}
@@ -197,3 +197,7 @@ td.n{text-align:right;font-variant-numeric:tabular-nums;font-weight:800}
 .stars .off{color:#ffffff30;text-shadow:none}
 .prev div span:last-child{white-space:nowrap;flex:none}
 .prev div{gap:10px}
+
+/* v1.6 : place de la proposition d'installation (au-dessus des onglets) */
+:root{--bsi-bottom:96px}
+.chip{line-height:1.15}

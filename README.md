@@ -1,5 +1,5 @@
 # Ball Star (Applis EPS Élèves)
-Challenge XP pour les activités d'opposition individuelle : tennis de table, badminton, tennis, sports de combat.
+Challenge XP pour les activités d'opposition : tennis de table, badminton, tennis, pickleball, padel, boxe française, lutte, judo.
 L'élève enregistre ses matchs, gagne de l'expérience, monte de niveau (Bronze, Argent, Or, Star) et débloque des avatars originaux avec les niveaux et des défis spéciaux.
 
 Dépôt conseillé : `BallStar_Eleves` → https://vinztoc.github.io/BallStar_Eleves/
@@ -10,21 +10,30 @@ Dépôt conseillé : `BallStar_Eleves` → https://vinztoc.github.io/BallStar_El
 | Match joué | +10 XP |
 | Victoire | +25 XP |
 | Écart au score (victoire seulement) | ≥ 3 pts : +5 · ≥ 6 pts : +10 · ≥ 10 pts : +15 |
-| Chaque observable validé pendant le match (par l'adversaire, un observateur ou l'élève) | +5 XP, 5 au maximum par match |
+| Chaque bonus BallStar validé pendant le match (action motrice choisie avant le match, validée par l'adversaire, un observateur ou l'élève) | +5 XP, 5 au maximum par match |
 
-Niveaux : Bronze (0), Argent (150), Or (400), Star (750 XP). Chaque niveau débloque un avatar.
+Niveaux : Bronze (0), Argent (500), Or (1000), Star (1500 XP), pensés pour un cycle d'au moins 16 séances. Chaque niveau débloque un avatar.
 
 ## Défis spéciaux : 3 étoiles chacun
 La 1re étoile débloque l'avatar du défi, la 2e et la 3e s'affichent en haut à droite de l'avatar. Paliers par défaut (modifiables dans Ball Star Prof) :
 
 | Défi (avatar) | ★ | ★★ | ★★★ |
 |---|---|---|---|
-| Série de feu (Combo) : victoires d'affilée | 3 | 5 | 7 |
-| Tour du monde (Globe) : adversaires différents | 5 | 8 | 12 |
-| Œil de lynx (Lynx) : observables validés | 5 | 15 | 30 |
-| Increvable (Turbo) : matchs joués | 10 | 20 | 35 |
-| Rouleau compresseur (Titan) : victoires avec le plus gros bonus d'écart | 1 | 3 | 5 |
-| Maîtrise totale (Zen) : matchs d'affilée avec au moins un observable validé | 3 | 5 | 8 |
+| Série de feu (Combo) : victoires d'affilée | 4 | 7 | 10 |
+| Tour du monde (Globe) : adversaires différents | 6 | 10 | 15 |
+| Œil de lynx (Lynx) : bonus BallStar validés | 20 | 50 | 100 |
+| Increvable (Turbo) : matchs joués | 15 | 35 | 60 |
+| Rouleau compresseur (Titan) : victoires avec le plus gros bonus d'écart | 3 | 8 | 15 |
+| Maîtrise totale (Zen) : matchs d'affilée avec au moins un bonus validé | 5 | 10 | 15 |
+
+## Avatars légendaires (aura étoilée)
+Débloqués avec le total d'étoiles de défis (sur 18) : Comète (6), Éclipse (10), Galaxie (14), Supernova (18). 14 avatars en tout.
+
+## Bonus BallStar
+10 actions motrices par APSA (liste de référence « 50 actions motrices à valoriser en matchs-défis en EPS », complétée pour le tennis). Le professeur peut modifier les listes ou imposer un bonus dans Ball Star Prof.
+
+## Installation
+À l'ouverture, l'appli propose de s'installer si ce n'est pas déjà fait (bouton « Installer » sur Chrome, Edge et Android ; rappel « Partager → Sur l'écran d'accueil » sur iPhone et iPad). « Plus tard » la masque jusqu'à la prochaine ouverture.
 
 ## Arène
 Boutons « 📜 Règles du jeu » (pop-up avec le barème, les niveaux et les paliers des défis) et « 📥 Importer les règles du prof ».

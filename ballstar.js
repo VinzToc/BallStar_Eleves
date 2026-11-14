@@ -20,7 +20,7 @@ function loadCfg(){try{const o=JSON.parse(ls.get(CFG_KEY)||'null');if(o&&o.cfg&&
 let CFG=loadCfg();
 const saveCfg=()=>ls.set(CFG_KEY,JSON.stringify({cfg:CFG,code:R_.signe(CFG)}));
 const levelOf=xp=>R_.levelOf(CFG,xp);
-function state(rows){const p=R_.progression(CFG,rows);p.unlocked=new Set(AVATARS.filter(a=>a.defi?p.defis.find(d=>d.id===a.defi).done:a.niveau<=p.lvl).map(a=>a.id));return p}
+function state(rows){const p=R_.progression(CFG,rows);p.unlocked=new Set(AVATARS.filter(a=>a.defi?p.defis.find(d=>d.id===a.defi).done:a.legende!=null?p.etoiles>=CFG.legendes[a.legende]:a.niveau<=p.lvl).map(a=>a.id));return p}
 
 /* ───────── Données élève ───────── */
 let ME=null,ROWS=[],ST=state([]);
@@ -56,7 +56,7 @@ function renderArene(){const a=activeAvatar(),x=xpInfo();
  <div class="info"><div class="nm">${esc(a.nom)}</div><div class="tt">${ME?esc(ME.prenom)+' · ':''}${esc(a.titre)}</div>
   <div class="lvl">${badgeSVG(ST.lvl,34)} ${NIVEAUX[ST.lvl].nom}</div>
   <div class="xpbar"><i id="xpFill"></i><b>${x.txt}</b></div><div class="xpnext">${x.next}</div></div>
- <div class="stats" style="grid-column:1/-1"><div class="stat"><b>${ST.n}</b><span>Matchs</span></div><div class="stat"><b>${ST.w}</b><span>Victoires</span></div><div class="stat"><b>${ST.l}</b><span>Défaites</span></div><div class="stat"><b>${ST.obs}</b><span>Observables</span></div></div>`;
+ <div class="stats" style="grid-column:1/-1"><div class="stat"><b>${ST.n}</b><span>Matchs</span></div><div class="stat"><b>${ST.w}</b><span>Victoires</span></div><div class="stat"><b>${ST.l}</b><span>Défaites</span></div><div class="stat"><b>${ST.obs}</b><span>Bonus</span></div></div>`;
  requestAnimationFrame(()=>requestAnimationFrame(()=>{const f=$('#xpFill');if(f)f.style.width=x.pct+'%'}));
  const nd=ST.defis.filter(d=>d.etoiles<3).sort((p,q)=>q.v/q.cible-p.v/p.cible)[0];
  $('#nextDefi').innerHTML=nd?defiItem(nd):`<div class="empty">🏆 Tous les défis sont à 3 étoiles. Respect !</div>`;
@@ -76,14 +76,14 @@ function renderMatchForm(){if(!F.act)F.act=lastAct();
  $('#mAct').innerHTML=ACTS.map(a=>`<button type="button" class="chip ${a.n===F.act?'on':''}" data-act="${esc(a.n)}"><span class="e">${a.e}</span>${esc(a.n)}</button>`).join('');
  const advs=[...new Set(ST.R.map(r=>r.Adversaire).filter(Boolean))];$('#advList').innerHTML=advs.map(a=>`<option value="${esc(a)}">`).join('');
  const c=CFG.acts[F.act];
- if(c.impose){$('#mObsZone').innerHTML=`<div class="lock">🔒 ${esc(c.impose)}<small>Observable fixé par ton professeur</small></div>`}
+ if(c.impose){$('#mObsZone').innerHTML=`<div class="lock">🔒 ${esc(c.impose)}<small>Bonus BallStar fixé par ton professeur</small></div>`}
  else{const opts=c.obs.map(o=>`<option ${o===F.obsSel?'selected':''}>${esc(o)}</option>`).join('');
   const autre=F.obsSel&&!c.obs.includes(F.obsSel);
-  $('#mObsZone').innerHTML=`<select id="mObs" aria-label="Choisir mon observable"><option value="">— Choisis ton observable —</option>${opts}<option value="__autre" ${autre?'selected':''}>✏️ Autre : je l'écris moi-même</option></select>
-  <input type="text" id="mObsAutre" maxlength="80" placeholder="Écris ton observable" ${autre?'':'hidden'} value="${autre?esc(F.obsSel):''}">`;
+  $('#mObsZone').innerHTML=`<select id="mObs" aria-label="Choisir mon bonus BallStar"><option value="">— Choisis ton bonus BallStar —</option>${opts}<option value="__autre" ${autre?'selected':''}>✏️ Autre : je l'écris moi-même</option></select>
+  <input type="text" id="mObsAutre" maxlength="80" placeholder="Écris ton bonus BallStar" ${autre?'':'hidden'} value="${autre?esc(F.obsSel):''}">`;
   $('#mObs').onchange=()=>{const v=$('#mObs').value;$('#mObsAutre').hidden=v!=='__autre';F.obsSel=v==='__autre'?$('#mObsAutre').value.trim():v;if(v==='__autre')$('#mObsAutre').focus();preview()};
   $('#mObsAutre').oninput=()=>{F.obsSel=$('#mObsAutre').value.trim();preview()}}
- $('#nObs').value=F.nObs;$('#nObsMax').textContent=`XP comptée jusqu'à ${CFG.xp.maxObs} observable${CFG.xp.maxObs>1?'s':''} par match (${CFG.xp.bonus} XP chacun).`;
+ $('#nObs').value=F.nObs;$('#nObsMax').textContent=`XP comptée jusqu'à ${CFG.xp.maxObs} bonus par match (${CFG.xp.bonus} XP chacun).`;
  $$('#mVal button').forEach(b=>b.classList.toggle('on',b.dataset.v===F.val));
  preview()}
 function curObs(){const c=CFG.acts[F.act];return c.impose?{txt:c.impose,src:'Prof'}:{txt:F.obsSel,src:c.obs.includes(F.obsSel)?'Liste':'Élève'}}
@@ -91,7 +91,7 @@ function scores(){return{me:Math.max(0,Math.round(N($('#sMe').value))),adv:Math.
 function preview(){const s=scores(),x=calcXP(CFG,s.me,s.adv,F.nObs);
  $('#advLb').textContent=$('#mAdv').value.trim()||'Adversaire';
  $('#mPrev').innerHTML=`<div>🎮 Match joué<span>+${x.match} XP</span></div><div class="${x.victoire?'':'off'}">🏆 Victoire<span>+${x.victoire} XP</span></div>
- <div class="${x.ecart?'':'off'}">📏 Écart au score (${x.diff} pt${x.diff>1?'s':''})<span>+${x.ecart} XP</span></div><div class="${x.bonus?'':'off'}">🎯 Observables validés (${x.compte}${x.nObs>x.compte?` comptés sur ${x.nObs}`:''} × ${CFG.xp.bonus} XP)<span>+${x.bonus} XP</span></div>
+ <div class="${x.ecart?'':'off'}">📏 Écart au score (${x.diff} pt${x.diff>1?'s':''})<span>+${x.ecart} XP</span></div><div class="${x.bonus?'':'off'}">🎯 Bonus BallStar validés (${x.compte}${x.nObs>x.compte?` comptés sur ${x.nObs}`:''} × ${CFG.xp.bonus} XP)<span>+${x.bonus} XP</span></div>
  <div class="tot">Total<span>+${x.total} XP</span></div>`}
 $('#mAct').addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b)return;F.act=b.dataset.act;F.obsSel='';renderMatchForm()});
 $$('[data-s]').forEach(b=>b.onclick=()=>{const i=b.dataset.s==='me'?$('#sMe'):$('#sAdv');i.value=Math.max(0,N(i.value)+N(b.dataset.d));preview()});
@@ -104,8 +104,8 @@ $('#mSave').onclick=async()=>{const err=t=>{$('#mErr').textContent=t;toast(t,tru
  const adv=$('#mAdv').value.trim(),s=scores(),o=curObs();
  if(!adv)return err("Indique le nom de ton adversaire.");
  if(s.me===0&&s.adv===0)return err('Entre le score du match.');
- if(!o.txt)return err('Choisis ton observable (étape 1).');
- if(F.nObs>0&&!F.val)return err('Indique qui a validé tes observables.');
+ if(!o.txt)return err('Choisis ton bonus BallStar (étape 1).');
+ if(F.nObs>0&&!F.val)return err('Indique qui a validé tes bonus.');
  if(!ME){if(window.ELEVE){ELEVE.changer();await ELEVE.demander();await reload()}if(!ME)return err("Identifie-toi pour enregistrer ton match.")}
  const x=calcXP(CFG,s.me,s.adv,F.nObs),before=ST,now=new Date(),p=n=>String(n).padStart(2,'0');
  const xpCum=before.xp+x.total,lvlAfter=levelOf(xpCum);
@@ -125,7 +125,9 @@ async function celebrate(before,after,gain){const fly=document.createElement('di
   await showUnlock(`${badgeSVG(after.lvl,70)}<h2>Niveau ${NIVEAUX[after.lvl].nom} !</h2>`,a,`Tu débloques l'avatar <b>${esc(a.nom)}</b>, ${esc(a.titre.toLowerCase())}.`)}
  for(const d of after.defis){const b=before.defis.find(x=>x.id===d.id);if(d.etoiles<=b.etoiles)continue;const a=AVATARS.find(v=>v.defi===d.id);
   await showUnlock(`<h2>${esc(d.nom)}</h2><p class="stars big">${STARS(d.etoiles)}</p><p style="margin:0;font-weight:800">${esc(d.textes[d.etoiles-1])}</p>`,a,
-   b.etoiles===0?`Nouvel avatar : <b>${esc(a.nom)}</b>`:`<b>${esc(a.nom)}</b> gagne sa ${d.etoiles===2?'2e':'3e'} étoile !`,d.etoiles)}}
+   b.etoiles===0?`Nouvel avatar : <b>${esc(a.nom)}</b>`:`<b>${esc(a.nom)}</b> gagne sa ${d.etoiles===2?'2e':'3e'} étoile !`,d.etoiles)}
+ for(const a of AVATARS.filter(v=>v.legende!=null&&after.unlocked.has(v.id)&&!before.unlocked.has(v.id)))
+  await showUnlock(`<h2>Avatar légendaire !</h2><p style="margin:0;font-weight:800">${CFG.legendes[a.legende]} étoiles de défis gagnées</p>`,a,`<b>${esc(a.nom)}</b> rejoint ta collection.`)}
 async function showUnlock(head,a,txt,stars){const p=modal(`${head}<div class="bigava"><div class="rays"></div>${avatarSVG(a,{k:'u',stars:stars||0})}</div><p>${txt}</p>`,[{t:'Le choisir',v:'pick'},{t:'Plus tard',v:'',cls:'g'}]);
  confetti($('#modal .mbox'));if(await p==='pick'){ls.set(avKey(),a.id);renderAll()}}
 
@@ -138,19 +140,19 @@ function renderDefis(){const s=CFG.seuils;
 
 /* ───────── Avatars ───────── */
 function renderAvatars(){const act=activeAvatar().id;$('#avCount').textContent=`${ST.unlocked.size} / ${AVATARS.length}`;
- $('#avGrid').innerHTML=AVATARS.map(a=>{const ok=ST.unlocked.has(a.id),how=a.defi?(ST.defis.find(d=>d.id===a.defi)||{}).textes[0]:(a.niveau===0?'Avatar de départ':'Niveau '+NIVEAUX[a.niveau].nom);
+ $('#avGrid').innerHTML=AVATARS.map(a=>{const ok=ST.unlocked.has(a.id),how=a.defi?(ST.defis.find(d=>d.id===a.defi)||{}).textes[0]:a.legende!=null?`Légendaire : ${CFG.legendes[a.legende]} étoiles de défis (tu en as ${ST.etoiles})`:(a.niveau===0?'Avatar de départ':'Niveau '+NIVEAUX[a.niveau].nom);
   return `<div class="acard ${ok?'':'lk'} ${a.id===act?'on':''}" ${ok?`data-av="${a.id}" role="button" tabindex="0"`:''}>${avatarSVG(a,{locked:!ok,k:'g',stars:starsOf(a)})}${ok?'':'<span class="lkic" aria-hidden="true">🔒</span>'}<b>${ok?esc(a.nom):'???'}${ok&&a.defi?` <span class="stars">${STARS(starsOf(a))}</span>`:''}</b><small>${ok?esc(a.titre):esc(how)}</small></div>`}).join('')}
 $('#avGrid').addEventListener('click',e=>{const c=e.target.closest('[data-av]');if(!c)return;ls.set(avKey(),c.dataset.av);renderAll();toast(`${AVATARS.find(a=>a.id===c.dataset.av).nom} est ton avatar actif`)});
 $('#avGrid').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){const c=e.target.closest('[data-av]');if(c){e.preventDefault();c.click()}}});
 
 /* ───────── Bilan ───────── */
 function renderBilan(){const R=ST.R,pc=(a,b)=>b?Math.round(a/b*100)+'%':'–';
- $('#bStats').innerHTML=`<div class="stat"><b>${ST.xp}</b><span>XP totale</span></div><div class="stat"><b>${ST.n}</b><span>Matchs</span></div><div class="stat"><b>${pc(ST.w,ST.n)}</b><span>Victoires</span></div><div class="stat"><b>${ST.obs}</b><span>Observables</span></div>`;
+ $('#bStats').innerHTML=`<div class="stat"><b>${ST.xp}</b><span>XP totale</span></div><div class="stat"><b>${ST.n}</b><span>Matchs</span></div><div class="stat"><b>${pc(ST.w,ST.n)}</b><span>Victoires</span></div><div class="stat"><b>${ST.obs}</b><span>Bonus</span></div>`;
  const byAct=ACTS.map(a=>{const L=R.filter(r=>r['Activité']===a.n);return{a,n:L.length,w:L.filter(isWin).length,l:L.filter(r=>r['Résultat']==='Défaite').length,xp:L.reduce((s,r)=>s+N(r['XP gagnée']),0)}}).filter(x=>x.n);
  $('#bAct').innerHTML=byAct.length?`<table><thead><tr><th>Activité</th><th style="text-align:right">Matchs</th><th style="text-align:right">V</th><th style="text-align:right">D</th><th style="text-align:right">XP</th></tr></thead><tbody>${byAct.map(x=>`<tr><td>${x.a.e} ${esc(x.a.n)}</td><td class="n">${x.n}</td><td class="n">${x.w}</td><td class="n">${x.l}</td><td class="n">${x.xp}</td></tr>`).join('')}</tbody></table>`:`<div class="empty">Pas encore de match.</div>`;
  const obs={};R.forEach(r=>{const k=r.Observable||'—';(obs[k]=obs[k]||{n:0,ok:0}).n++;obs[k].ok+=nbObs(r)});
  const ok=Object.entries(obs).sort((a,b)=>b[1].n-a[1].n);
- $('#bObs').innerHTML=ok.length?`<table><thead><tr><th>Observable</th><th style="text-align:right">Matchs</th><th style="text-align:right">Validés</th><th style="text-align:right">Moyenne</th></tr></thead><tbody>${ok.map(([k,v])=>`<tr><td>${esc(k)}</td><td class="n">${v.n}</td><td class="n">${v.ok}</td><td class="n"><span class="pct">${(v.ok/v.n).toFixed(1).replace('.',',')}</span></td></tr>`).join('')}</tbody></table>`:`<div class="empty">Pas encore d'observable.</div>`;
+ $('#bObs').innerHTML=ok.length?`<table><thead><tr><th>Bonus BallStar</th><th style="text-align:right">Matchs</th><th style="text-align:right">Validés</th><th style="text-align:right">Moyenne</th></tr></thead><tbody>${ok.map(([k,v])=>`<tr><td>${esc(k)}</td><td class="n">${v.n}</td><td class="n">${v.ok}</td><td class="n"><span class="pct">${(v.ok/v.n).toFixed(1).replace('.',',')}</span></td></tr>`).join('')}</tbody></table>`:`<div class="empty">Pas encore d'observable.</div>`;
  $('#bHist').innerHTML=R.length?[...R].reverse().map(r=>matchItem(r,true)).join(''):`<div class="empty">Ton historique apparaîtra ici.</div>`}
 $('#bHist').addEventListener('click',async e=>{const b=e.target.closest('[data-del]');if(!b||!ME)return;
  const [d,h,a]=b.dataset.del.split('|');
@@ -177,12 +179,14 @@ function reglesHTML(){const c=CFG,src=R_.isDefault(c)?'Réglages par défaut':'R
  return `<div class="regles"><h2>📜 Règles du jeu</h2><p class="mut">🔒 ${esc(src)}. Seul ton professeur peut les changer : ce sont les mêmes pour toute la classe.</p>
  <h3>Gagner de l'XP à chaque match</h3><div class="prev"><div>🎮 Match joué<span>+${c.xp.joue} XP</span></div><div>🏆 Victoire<span>+${c.xp.victoire} XP</span></div>
  ${c.ecart.map(e=>`<div>📏 Victoire avec ${e[0]} points d'écart ou plus<span>+${e[1]} XP</span></div>`).join('')}
- <div>🎯 Chaque observable validé (${c.xp.maxObs} maximum par match)<span>+${c.xp.bonus} XP</span></div></div>
+ <div>🎯 Chaque bonus BallStar validé (${c.xp.maxObs} maximum par match)<span>+${c.xp.bonus} XP</span></div></div>
  <p class="mut" style="margin:6px 0 0">Pour l'écart, seul le palier le plus haut atteint compte.</p>
  <h3>Niveaux</h3><div class="prev">${NIVEAUX.map((n,i)=>`<div><span class="lvl" style="font-size:1rem">${badgeSVG(i,22)} ${n.nom}</span><span>${i?c.seuils[i]+' XP':'départ'}</span></div>`).join('')}</div>
  <p class="mut" style="margin:6px 0 0">Chaque niveau débloque un avatar.</p>
  <h3>Défis spéciaux</h3><div class="prev">${ST.defis.map(d=>`<div style="display:block"><b>${esc(d.nom)}</b><br>${d.textes.map((t,i)=>`<small class="rl">${'★'.repeat(i+1)} ${esc(t)}</small>`).join('')}</div>`).join('')}</div>
- <p class="mut" style="margin:6px 0 0">La 1re étoile débloque l'avatar du défi, les suivantes ajoutent des étoiles dessus.</p></div>`}
+ <p class="mut" style="margin:6px 0 0">La 1re étoile débloque l'avatar du défi, les suivantes ajoutent des étoiles dessus.</p>
+ <h3>Avatars légendaires</h3><div class="prev">${AVATARS.filter(a=>a.legende!=null).map(a=>`<div><span>✨ ${esc(a.nom)}</span><span>${c.legendes[a.legende]} étoiles de défis</span></div>`).join('')}</div>
+ <p class="mut" style="margin:6px 0 0">Tu as ${ST.etoiles} étoile${ST.etoiles>1?'s':''} sur ${ST.defis.length*3}.</p></div>`}
 $('#aRegles').onclick=()=>modal(reglesHTML(),[{t:'OK',v:1}]);
 $('#aImp').onclick=()=>$('#cfgFile').click();
 $('#cfgFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;

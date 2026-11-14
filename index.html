@@ -38,7 +38,7 @@
   <label class="f" for="mAdv">Mon adversaire (nom, prénom)</label>
   <input type="text" id="mAdv" list="advList" autocomplete="off" maxlength="60" placeholder="ex. Léa MARTIN">
   <datalist id="advList"></datalist>
-  <h3>Mon observable</h3>
+  <h3>Mon bonus BallStar</h3>
   <div id="mObsZone"></div>
  </div>
  <div class="card">
@@ -48,9 +48,9 @@
    <div class="vs">VS</div>
    <div class="sbox"><div class="lb" id="advLb">Adversaire</div><div class="ctl"><button type="button" data-s="adv" data-d="-1" aria-label="Retirer un point à l'adversaire">−</button><input type="number" id="sAdv" min="0" max="999" value="0" inputmode="numeric" aria-label="Score de l'adversaire"><button type="button" data-s="adv" data-d="1" aria-label="Ajouter un point à l'adversaire">+</button></div></div>
   </div>
-  <h3>Nombre d'observables validés pendant le match</h3>
-  <div class="obsctl"><button type="button" data-o="-1" aria-label="Un observable de moins">−</button><input type="number" id="nObs" min="0" max="99" value="0" inputmode="numeric" aria-label="Nombre d'observables validés"><button type="button" data-o="1" aria-label="Un observable de plus">+</button><span class="mut" id="nObsMax"></span></div>
-  <h3>Observables validés par</h3>
+  <h3>Nombre de bonus BallStar validés pendant le match</h3>
+  <div class="obsctl"><button type="button" data-o="-1" aria-label="Un bonus de moins">−</button><input type="number" id="nObs" min="0" max="99" value="0" inputmode="numeric" aria-label="Nombre de bonus BallStar validés"><button type="button" data-o="1" aria-label="Un bonus de plus">+</button><span class="mut" id="nObsMax"></span></div>
+  <h3>Bonus validés par</h3>
   <div class="seg" id="mVal"><button type="button" data-v="Adversaire">🤝 Adversaire</button><button type="button" data-v="Observateur">👀 Observateur</button><button type="button" data-v="Moi-même">🙋 Moi-même</button></div>
   <div class="prev" id="mPrev"></div>
   <div style="margin-top:14px"><button class="btn big" id="mSave">⭐ Valider le match</button></div>
@@ -73,7 +73,7 @@
 <section id="vBilan" hidden>
  <div class="card"><h2>Synthèse</h2><div class="stats" id="bStats" style="margin-top:0"></div></div>
  <div class="card"><h2>Par activité</h2><div class="tbl" id="bAct"></div></div>
- <div class="card"><h2>Mes observables</h2><div class="tbl" id="bObs"></div></div>
+ <div class="card"><h2>Mes bonus BallStar</h2><div class="tbl" id="bObs"></div></div>
  <div class="card"><h2>Historique</h2><div class="mlist" id="bHist"></div></div>
  <div class="card"><h2>Sauvegarde</h2>
   <p class="mut" style="margin-top:-4px">Tes matchs sont aussi enregistrés automatiquement dans le portail Applis EPS Élèves (onglet « ballstar » de ton fichier). Exporte ton fichier pour le garder sur ton appareil ou le remettre à ton professeur.</p>
@@ -102,4 +102,5 @@
 <script src="bs-rules.js"></script>
 <script src="bs-art.js"></script>
 <script src="ballstar.js"></script>
+<script src="bs-install.js"></script>
 </body></html>
