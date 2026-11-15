@@ -37,7 +37,10 @@ Débloqués avec le total d'étoiles de défis (sur 18) : Comète (6), Éclipse 
 
 ## Deux façons d'enregistrer un match
 - **📝 Match terminé** : on saisit le score et le nombre de bonus BallStar après le match.
-- **🔴 En direct** : un observateur suit **un seul joueur** avec son téléphone. Il touche « +1 point » pour chaque point et « Bonus BallStar réussi ! » à chaque bonus. L'XP s'affiche en direct avec les animations (+10 au départ, +5 par bonus, puis victoire et écart à la fin). L'écran reste allumé, et un direct interrompu (appel, rechargement) reprend à la réouverture. Chaque match garde sa façon d'être saisi (colonne « Saisie » : Direct ou Après le match).
+- **👀 Observer en direct** : l'élève est **observateur** d'un match entre deux camarades (il ne peut pas être l'un des joueurs). Il saisit les deux joueurs et le bonus BallStar de chacun, puis touche « +1 point » et « Bonus ! » pour chaque joueur. L'XP des joueurs et la sienne s'affichent en direct avec les animations. L'écran reste allumé, et un direct interrompu reprend à la réouverture.
+- Le match observé **ne compte pas** dans les matchs de l'observateur : il apparaît dans son historique avec la mention « Observateur » et lui rapporte de l'XP d'observateur (+20 XP par match observé, +2 XP par bonus noté, 5 bonus maximum comptés par joueur ; réglable dans Ball Star Prof).
+- **QR code** : à la fin du match, l'observateur affiche un QR code signé (réaffichable depuis son Bilan). Chaque joueur le scanne dans son appli (Arène → 📷 Scanner un match observé, ou avec une photo du QR code, ou avec l'appareil photo du téléphone) et le match s'ajoute à son historique avec son XP. Un QR code modifié ou déjà scanné est refusé.
+- Si un joueur n'a pas scanné, Ball Star Prof lui attribue quand même le match en important le fichier de l'observateur.
 
 ## Arène
 Boutons « 📜 Règles du jeu » (pop-up avec le barème, les niveaux et les paliers des défis) et « 📥 Importer les règles du prof ».
@@ -65,3 +68,7 @@ Dans `apps.json` du dépôt `Applis_EPS_Eleves`, ajouter (et copier `icons/icon-
 ```json
 {"id":"ballstar","nom":"Ball Star","desc":"Challenge XP en raquettes et combat : gagne des niveaux et débloque des avatars","url":"https://vinztoc.github.io/BallStar_Eleves/","icon":"icons/icon-192-BallStar.png","emoji":"⭐","couleur":"#ffe14a,#8f5bff","categorie":"Performances"}
 ```
+
+## Bibliothèques incluses (dossier `lib/`)
+- `qrcode.js` : QR Code Generator for JavaScript, Kazuhiko Arase, licence MIT.
+- `jsQR.js` : lecture de QR codes, Cosmo Wolfe, licence Apache-2.0.

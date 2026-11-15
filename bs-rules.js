@@ -16,7 +16,7 @@ const DEFIS_DEF={combo:[4,7,10],globe:[6,10,15],lynx:[20,50,100],turbo:[15,35,60
 /* Avatars légendaires : débloqués par le total d'étoiles gagnées dans les défis (sur 18). */
 const LEGENDES_DEF=[6,10,14,18];
 /* Bonus BallStar par défaut : actions motrices valorisées pendant les matchs-défis (10 par APSA). */
-const DEF={xp:{joue:10,victoire:25,bonus:5,maxObs:5},ecart:[[3,5],[6,10],[10,15]],seuils:[0,500,1000,1500],defis:DEFIS_DEF,legendes:LEGENDES_DEF,
+const DEF={xp:{joue:10,victoire:25,bonus:5,maxObs:5,obsMatch:20,obsBonus:2},ecart:[[3,5],[6,10],[10,15]],seuils:[0,500,1000,1500],defis:DEFIS_DEF,legendes:LEGENDES_DEF,
  acts:{
   'Tennis de table':{impose:'',obs:['Varier la longueur du service','Gagner le point au service','Gagner le point balle envoyée à droite','Gagner le point balle envoyée à gauche','Réaliser un coup droit offensif (balle accélérée)','Réaliser un revers offensif (balle accélérée)','Alterner droite, gauche et droite','Réaliser une balle courte (amorti)','Réaliser une frappe rapide (smash)','Marquer sur une balle placée']},
   'Badminton':{impose:'',obs:['Marquer sur un service court','Marquer sur un service long','Réaliser un dégagement','Réaliser un amorti','Réaliser un smash','Jouer un volant croisé','Alterner avant, arrière et avant','Réaliser un contre-amorti','Se replacer après une frappe','Marquer dans un espace libre']},
@@ -30,7 +30,7 @@ const DEF={xp:{joue:10,victoire:25,bonus:5,maxObs:5},ecart:[[3,5],[6,10],[10,15]
 
 /* Remet un objet de réglages dans une forme propre et complète (ordre des clés fixe → code de contrôle stable). */
 function clean(c){c=c||{};const d=clone(DEF),x=c.xp||{};
- const out={xp:{joue:N(x.joue??d.xp.joue),victoire:N(x.victoire??d.xp.victoire),bonus:N(x.bonus??d.xp.bonus),maxObs:Math.max(1,N(x.maxObs??d.xp.maxObs))},
+ const out={xp:{joue:N(x.joue??d.xp.joue),victoire:N(x.victoire??d.xp.victoire),bonus:N(x.bonus??d.xp.bonus),maxObs:Math.max(1,N(x.maxObs??d.xp.maxObs)),obsMatch:N(x.obsMatch??d.xp.obsMatch),obsBonus:N(x.obsBonus??d.xp.obsBonus)},
   ecart:(Array.isArray(c.ecart)?c.ecart:d.ecart).map(e=>[N(e[0]),N(e[1])]).filter(e=>e[0]>0).sort((a,b)=>a[0]-b[0]),
   seuils:Array.isArray(c.seuils)&&c.seuils.length===4?[0,N(c.seuils[1]),N(c.seuils[2]),N(c.seuils[3])]:d.seuils,defis:{},legendes:[],acts:{}};
  {const v=c.legendes;out.legendes=Array.isArray(v)&&v.length===4&&v.every(z=>N(z)>0)?v.map(N):LEGENDES_DEF.slice()}
@@ -45,7 +45,8 @@ const SALT='BallStar·EPS·v1·raquettes&combat';
 function hash(str){let h1=0xdeadbeef,h2=0x41c6ce57;for(let i=0;i<str.length;i++){const c=str.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677)}
  h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);
  return(4294967296*(2097151&h2)+(h1>>>0)).toString(36).toUpperCase().padStart(11,'0')}
-const signe=c=>hash(SALT+JSON.stringify(clean(c)));
+/* Les XP d'observateur (ajoutés en v1.8) ne changent pas le code quand ils gardent leur valeur par défaut : les anciens fichiers restent valables. */
+const signe=c=>{const k=clean(c);if(k.xp.obsMatch===DEF.xp.obsMatch&&k.xp.obsBonus===DEF.xp.obsBonus){delete k.xp.obsMatch;delete k.xp.obsBonus}return hash(SALT+JSON.stringify(k))};
 const codeCourt=c=>isDefault(c)?'Défaut':signe(c).slice(-6);
 
 /* XP d'un match.  nObs = nombre d'observables validés pendant le match (compté jusqu'au maximum fixé par le prof). */
@@ -78,19 +79,35 @@ function etatDefi(d,cfg,R){const p=cfg.defis[d.id],v=d.val(R,cfg),etoiles=p.filt
  return{...d,paliers:p,v,etoiles,done:etoiles>0,cible,texte:d.desc(cible),textes:p.map(n=>d.desc(n))}}
 
 /* Progression d'un élève.  recalc:true → l'XP de chaque match est recalculée avec cfg (interface prof). */
-function progression(cfg,rows,opt){opt=opt||{};let R=sortRows(rows);
- if(opt.recalc)R=R.map(r=>{const x=calcXP(cfg,r['Mon score'],r['Score adversaire'],nbObs(r));
+/* Ligne « Observation » : l'élève était observateur d'un match (il n'y jouait pas). Elle rapporte de l'XP mais ne compte pas comme un match. */
+const isObsRow=r=>r&&r.Type==='Observation';
+const obsXP=(cfg,r)=>cfg.xp.obsMatch+cfg.xp.obsBonus*(Math.min(N(r['Bonus A validés']),cfg.xp.maxObs)+Math.min(N(r['Bonus B validés']),cfg.xp.maxObs));
+
+/* Progression d'un élève.  recalc:true → l'XP de chaque ligne est recalculée avec cfg (interface prof).
+   T = toutes les lignes (matchs + observations) dans l'ordre, R = matchs joués, O = matchs observés. */
+function progression(cfg,rows,opt){opt=opt||{};let T=sortRows(rows);
+ if(opt.recalc)T=T.map(r=>{if(isObsRow(r)){const v=obsXP(cfg,r);return{...r,'XP gagnée':v,_declare:N(r['XP gagnée'])}}
+  const x=calcXP(cfg,r['Mon score'],r['Score adversaire'],nbObs(r));
   return{...r,'Résultat':x.win?'Victoire':x.nul?'Égalité':'Défaite','Observables validés':nbObs(r),'XP match':x.match,'XP victoire':x.victoire,'XP écart':x.ecart,'XP bonus':x.bonus,'XP gagnée':x.total,_declare:N(r['XP gagnée'])}});
- let cum=0;R=R.map(r=>{cum+=N(r['XP gagnée']);return{...r,_cum:cum}});
+ let cum=0;T=T.map(r=>{cum+=N(r['XP gagnée']);return{...r,_cum:cum}});
+ const R=T.filter(r=>!isObsRow(r)),O=T.filter(isObsRow);
  const xp=cum,lvl=levelOf(cfg,xp);
  const defis=DEFIS.map(d=>etatDefi(d,cfg,R));
  const w=R.filter(isWin).length,l=R.filter(isLoss).length,ok=R.filter(isOk).length,obs=R.reduce((s,r)=>s+nbObs(r),0),etoiles=defis.reduce((s,d)=>s+d.etoiles,0);
- const declare=rows.reduce((s,r)=>s+N(r['XP gagnée']),0);
- return{R,xp,lvl,defis,w,l,ok,obs,etoiles,n:R.length,declare}}
+ const declare=rows.reduce((s,r)=>s+N(r['XP gagnée']),0),xpObs=O.reduce((s,r)=>s+N(r['XP gagnée']),0);
+ return{T,R,O,xp,xpObs,lvl,defis,w,l,ok,obs,etoiles,n:R.length,declare}}
+
+/* Match observé partagé par QR code : données compactes + code de contrôle (un QR modifié est refusé). */
+const b64e=str=>btoa(unescape(encodeURIComponent(str))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+const b64d=str=>decodeURIComponent(escape(atob(String(str).replace(/-/g,'+').replace(/_/g,'/'))));
+function encodeMatch(m){const body={v:1,id:m.id,d:m.d,h:m.h,a:m.a,o:m.o,oc:m.oc||'',p:m.p};return b64e(JSON.stringify({...body,s:hash(SALT+'M'+JSON.stringify(body)).slice(-8)}))}
+function decodeMatch(code){let o;try{o=JSON.parse(b64d(String(code).trim()))}catch(e){throw new Error("ce QR code n'est pas un match Ball Star")}
+ if(!o||o.v!==1||!Array.isArray(o.p)||o.p.length!==2)throw new Error("ce QR code n'est pas un match Ball Star");
+ const {s:sig,...body}=o;if(sig!==hash(SALT+'M'+JSON.stringify(body)).slice(-8))throw new Error('ce QR code a été modifié');return body}
 
 /* Fichier de réglages (feuille BallStar_Config) */
 const CFG_SHEET='BallStar_Config';
-function versLignes(cfg){cfg=clean(cfg);const r=[['Paramètre','Activité','Valeur','XP'],['XP match joué','','',cfg.xp.joue],['XP victoire','','',cfg.xp.victoire],['XP par bonus BallStar validé','','',cfg.xp.bonus],['Bonus BallStar comptés par match (maximum)','',cfg.xp.maxObs,'']];
+function versLignes(cfg){cfg=clean(cfg);const r=[['Paramètre','Activité','Valeur','XP'],['XP match joué','','',cfg.xp.joue],['XP victoire','','',cfg.xp.victoire],['XP par bonus BallStar validé','','',cfg.xp.bonus],['Bonus BallStar comptés par match (maximum)','',cfg.xp.maxObs,''],['XP observateur par match observé','','',cfg.xp.obsMatch],['XP observateur par bonus saisi','','',cfg.xp.obsBonus]];
  cfg.ecart.forEach(e=>r.push(['Bonus écart','',e[0],e[1]]));[1,2,3].forEach(i=>r.push(['Seuil niveau',NIV[i],cfg.seuils[i],'']));
  DEFIS.forEach(d=>cfg.defis[d.id].forEach((v,i)=>r.push(['Défi '+(i+1)+' étoile'+(i?'s':''),d.nom,v,''])));
  cfg.legendes.forEach((v,i)=>r.push(['Avatar légendaire',String(i+1),v,'']));
@@ -101,6 +118,8 @@ function depuisLignes(rows){const c={xp:{},ecart:[],seuils:[0,0,0,0],acts:{},def
  for(const row of rows.slice(1)){const [p,a,v,x]=Array.from(row||[],z=>z==null?'':z),k=norm(p),act=ACTS.find(z=>norm(z.n)===norm(a));
   if(k==='xpmatchjoue'){c.xp.joue=N(x);seen++}else if(k==='xpvictoire'){c.xp.victoire=N(x);seen++}else if(k==='xpobservablereussi'||k==='xpparobservablevalide'||k==='xpparbonusballstarvalide'){c.xp.bonus=N(x);seen++}
   else if(k.startsWith('observablescomptes')||k.startsWith('bonusballstarcomptes')){c.xp.maxObs=N(v);seen++}
+  else if(k==='xpobservateurparmatchobserve'){c.xp.obsMatch=N(x);seen++}
+  else if(k==='xpobservateurparbonussaisi'){c.xp.obsBonus=N(x);seen++}
   else if(k==='avatarlegendaire'){const i=N(a)-1;if(i>=0&&i<4){c.legendes[i]=N(v);seen++}}
   else if(/^defi[123]etoiles?$/.test(k)){const d=DEFIS.find(z=>norm(z.nom)===norm(a));if(d){c.defis=c.defis||{};(c.defis[d.id]=c.defis[d.id]||[0,0,0])[N(k[4])-1]=N(v);seen++}}
   else if(k==='bonusecart'){c.ecart.push([N(v),N(x)]);seen++}
@@ -112,5 +131,5 @@ function depuisLignes(rows){const c={xp:{},ecart:[],seuils:[0,0,0,0],acts:{},def
  if(!c.seuils[1])c.seuils=DEF.seuils.slice();
  const cfg=clean(c);return{cfg,valide:!!code&&code===signe(cfg)}}
 
-window.BSRULES={ACTS,NIV,DEF,DEFIS,DEFIS_DEF,LEGENDES_DEF,etatDefi,nbObs,clean,isDefault,signe,codeCourt,calcXP,levelOf,maxEcartXP,isWin,isLoss,isOk,sortRows,progression,CFG_SHEET,versLignes,depuisLignes,norm,N};
+window.BSRULES={isObsRow,obsXP,encodeMatch,decodeMatch,ACTS,NIV,DEF,DEFIS,DEFIS_DEF,LEGENDES_DEF,etatDefi,nbObs,clean,isDefault,signe,codeCourt,calcXP,levelOf,maxEcartXP,isWin,isLoss,isOk,sortRows,progression,CFG_SHEET,versLignes,depuisLignes,norm,N};
 })();

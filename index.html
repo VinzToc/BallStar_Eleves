@@ -24,6 +24,7 @@
 <section id="vArene">
  <div class="card hero" id="hero"></div>
  <button class="btn big" data-go="vMatch">⚔️ Nouveau match</button>
+ <button class="btn v big scanbtn" id="aScan">📷 Scanner un match observé</button>
  <div class="row arow"><button class="btn v" id="aRegles">📜 Règles du jeu</button><button class="btn g" id="aImp">📥 Importer les règles du prof</button></div>
  <div class="card" style="margin-top:14px"><h2>Prochain défi</h2><div id="nextDefi"></div></div>
  <div class="card"><h2>Derniers matchs</h2><div class="mlist" id="lastMatchs"></div></div>
@@ -31,16 +32,23 @@
 
 <!-- MATCH -->
 <section id="vMatch" hidden>
- <div class="seg mode" id="mMode" role="tablist" aria-label="Façon d'enregistrer le match"><button type="button" data-m="post" class="on">📝 Match terminé</button><button type="button" data-m="live">🔴 En direct</button></div>
+ <div class="seg mode" id="mMode" role="tablist" aria-label="Façon d'enregistrer le match"><button type="button" data-m="post" class="on">📝 Match terminé</button><button type="button" data-m="live">👀 Observer en direct</button></div>
  <div class="card">
   <div class="step"><i>1</i> Avant le match</div>
   <h3 style="margin-top:0">Activité</h3>
   <div class="chips" id="mAct"></div>
+  <div id="postSetup">
   <label class="f" for="mAdv">Mon adversaire (nom, prénom)</label>
   <input type="text" id="mAdv" list="advList" autocomplete="off" maxlength="60" placeholder="ex. Léa MARTIN">
   <datalist id="advList"></datalist>
   <h3>Mon bonus BallStar</h3>
   <div id="mObsZone"></div>
+  </div>
+  <div id="liveSetup" hidden>
+   <p class="obsnote">👀 Tu es l'<b>observateur</b> : tu ne joues pas ce match. Tu suis les deux joueurs, leurs points et leurs bonus BallStar. Tu gagnes de l'XP d'observateur, et les joueurs récupèrent leur match avec un QR code à la fin.</p>
+   <div class="pset"><label class="f" for="p0">Joueur 1 (prénom NOM)</label><input type="text" id="p0" list="advList" autocomplete="off" maxlength="60" placeholder="ex. Léa DUPONT"><div id="o0Zone"></div></div>
+   <div class="pset"><label class="f" for="p1">Joueur 2 (prénom NOM)</label><input type="text" id="p1" list="advList" autocomplete="off" maxlength="60" placeholder="ex. Tom MARTIN"><div id="o1Zone"></div></div>
+  </div>
  </div>
  <div class="card">
   <div class="step"><i>2</i> Après le match</div>
@@ -56,7 +64,7 @@
   <div style="margin-top:14px"><button class="btn big" id="mSave">⭐ Valider le match</button></div>
   </div>
   <div id="liveZone" hidden>
-   <p class="mut" style="margin-top:0">Un observateur suit <b>un seul joueur</b> pendant tout le match avec ce téléphone : il compte les points et touche « Bonus BallStar » à chaque bonus réussi. L'XP s'affiche en direct.</p>
+   <p class="mut" style="margin-top:0">Pendant le match, touche « +1 point » à chaque point marqué et « Bonus ! » à chaque bonus BallStar réussi par un joueur. L'XP des joueurs et la tienne s'affichent en direct.</p>
    <button class="btn big" id="lStart">▶️ Lancer le direct</button>
   </div>
   <p class="mut" id="mErr" style="color:var(--ko);font-weight:800;min-height:1.2em;margin:8px 0 0"></p>
@@ -67,16 +75,17 @@
 <section id="vLive" hidden>
  <div class="card live">
   <div class="lhead"><span class="onair">● EN DIRECT</span><span id="lAct" class="mut"></span></div>
-  <div class="lwho"><span class="mini" id="lAva"></span><div><b id="lName"></b><small>observé·e · contre <span id="lAdvN"></span></small></div>
-   <div class="lxp"><b id="lXP">+0</b><span>XP du match</span></div></div>
-  <div class="xpbar"><i id="lBar"></i><b id="lBarT"></b></div>
-  <div class="xpnext" id="lHint"></div>
-  <div class="lscore">
-   <div class="ltile me"><button type="button" id="lMe" aria-label="Point pour le joueur observé"><span class="nm" id="lMeN">Moi</span><span class="pts" id="lMeS">0</span><span class="tap">+1 point</span></button><button type="button" class="minus" data-l="me" aria-label="Retirer un point au joueur observé">−1</button></div>
-   <div class="vs">VS</div>
-   <div class="ltile"><button type="button" id="lAd" aria-label="Point pour l'adversaire"><span class="nm" id="lAdN">Adversaire</span><span class="pts" id="lAdS">0</span><span class="tap">+1 point</span></button><button type="button" class="minus" data-l="ad" aria-label="Retirer un point à l'adversaire">−1</button></div>
+  <div class="lwho"><span class="mini" id="lAva"></span><div><b>👀 <span id="lName"></span></b><small id="lObsRule"></small></div>
+   <div class="lxp"><b id="lXP">+0</b><span>XP observateur</span></div></div>
+  <div class="lduo">
+   <div class="lp"><div class="lpn" id="lN0"></div><div class="lpx"><b id="lX0">+0</b> XP</div>
+    <button type="button" class="lpt" data-pt="0"><span class="pts" id="lS0">0</span><span class="tap">+1 point</span></button><button type="button" class="minus" data-minus="0">−1</button>
+    <button type="button" class="lbonus" data-bonus="0"><span class="big">🎯 Bonus !</span><span class="ob" id="lO0"></span><span class="cnt" id="lC0"></span></button></div>
+   <div class="lp"><div class="lpn" id="lN1"></div><div class="lpx"><b id="lX1">+0</b> XP</div>
+    <button type="button" class="lpt" data-pt="1"><span class="pts" id="lS1">0</span><span class="tap">+1 point</span></button><button type="button" class="minus" data-minus="1">−1</button>
+    <button type="button" class="lbonus" data-bonus="1"><span class="big">🎯 Bonus !</span><span class="ob" id="lO1"></span><span class="cnt" id="lC1"></span></button></div>
   </div>
-  <button type="button" class="lbonus" id="lBonus"><span class="big">🎯 Bonus BallStar réussi !</span><span id="lObs"></span><span id="lCnt" class="cnt"></span></button>
+  <div class="xpnext" id="lHint" style="text-align:center;margin-top:10px"></div>
   <div class="row lctl"><button class="btn g" id="lUndo">↩️ Annuler la dernière action</button><button class="btn" id="lEnd">🏁 Fin du match</button></div>
   <div style="text-align:center;margin-top:10px"><button class="btn g" id="lQuit" style="padding:8px 14px;font-size:.8rem">✖ Abandonner le direct</button></div>
  </div>
@@ -95,7 +104,7 @@
 
 <!-- BILAN -->
 <section id="vBilan" hidden>
- <div class="card"><h2>Synthèse</h2><div class="stats" id="bStats" style="margin-top:0"></div></div>
+ <div class="card"><h2>Synthèse</h2><div class="stats" id="bStats" style="margin-top:0"></div><p class="mut" id="bObsv" style="margin:10px 0 0;font-weight:800"></p></div>
  <div class="card"><h2>Par activité</h2><div class="tbl" id="bAct"></div></div>
  <div class="card"><h2>Mes bonus BallStar</h2><div class="tbl" id="bObs"></div></div>
  <div class="card"><h2>Historique</h2><div class="mlist" id="bHist"></div></div>
@@ -116,6 +125,7 @@
  <button data-go="vBilan"><span class="e">📊</span>Bilan</button>
 </div></nav>
 <div id="modal"></div>
+<input type="file" id="qrPhoto" accept="image/*" capture="environment" hidden>
 <input type="file" id="cfgFile" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
 
 <script src="version.js"></script>
@@ -125,6 +135,8 @@
 <script src="bs-xlsx.js"></script>
 <script src="bs-rules.js"></script>
 <script src="bs-art.js"></script>
+<script src="lib/qrcode.js"></script>
+<script src="lib/jsQR.js"></script>
 <script src="ballstar.js"></script>
 <script src="bs-install.js"></script>
 </body></html>
