@@ -32,9 +32,9 @@ const STARS=n=>'<span class="on">'+'★'.repeat(n)+'</span><span class="off">'+'
 function activeAvatar(){let id=ls.get(avKey());if(!id||!ST.unlocked.has(id))id='pixel';return AVATARS.find(a=>a.id===id)}
 
 /* ───────── Interface : navigation ───────── */
-const VIEWS=['vArene','vMatch','vDefis','vAvatars','vBilan'];
+const VIEWS=['vArene','vMatch','vDefis','vAvatars','vBilan','vLive'];
 function go(v){VIEWS.forEach(x=>$('#'+x).hidden=x!==v);$$('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.go===v));
- if(v==='vMatch')renderMatchForm();window.scrollTo({top:0,behavior:'smooth'})}
+ if(v==='vMatch'){renderMatchForm();setMode()}window.scrollTo({top:0,behavior:'smooth'})}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(b)go(b.dataset.go)});
 
 function toast(msg,ko){const t=document.createElement('div');t.className='toast'+(ko?' ko':'');t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3200)}
@@ -70,7 +70,7 @@ function defiItem(d){const a=AVATARS.find(x=>x.defi===d.id),max=d.etoiles>=3;
  <small class="pal">${d.paliers.map((n,i)=>`<span class="${d.etoiles>i?'on':''}">${'★'.repeat(i+1)} ${n}</span>`).join('')}<span class="cur">${Math.min(d.v,d.cible)} / ${d.cible}</span></small></div></div>`}
 
 /* ───────── Match ───────── */
-const F={act:null,nObs:0,val:null,obsSel:''};
+const F={act:null,nObs:0,obsSel:'',mode:'post'};
 function lastAct(){const r=ST.R[ST.R.length-1];return r&&ACTS.some(a=>a.n===r['Activité'])?r['Activité']:ACTS[0].n}
 function renderMatchForm(){if(!F.act)F.act=lastAct();
  $('#mAct').innerHTML=ACTS.map(a=>`<button type="button" class="chip ${a.n===F.act?'on':''}" data-act="${esc(a.n)}"><span class="e">${a.e}</span>${esc(a.n)}</button>`).join('');
@@ -84,7 +84,6 @@ function renderMatchForm(){if(!F.act)F.act=lastAct();
   $('#mObs').onchange=()=>{const v=$('#mObs').value;$('#mObsAutre').hidden=v!=='__autre';F.obsSel=v==='__autre'?$('#mObsAutre').value.trim():v;if(v==='__autre')$('#mObsAutre').focus();preview()};
   $('#mObsAutre').oninput=()=>{F.obsSel=$('#mObsAutre').value.trim();preview()}}
  $('#nObs').value=F.nObs;$('#nObsMax').textContent=`XP comptée jusqu'à ${CFG.xp.maxObs} bonus par match (${CFG.xp.bonus} XP chacun).`;
- $$('#mVal button').forEach(b=>b.classList.toggle('on',b.dataset.v===F.val));
  preview()}
 function curObs(){const c=CFG.acts[F.act];return c.impose?{txt:c.impose,src:'Prof'}:{txt:F.obsSel,src:c.obs.includes(F.obsSel)?'Liste':'Élève'}}
 function scores(){return{me:Math.max(0,Math.round(N($('#sMe').value))),adv:Math.max(0,Math.round(N($('#sAdv').value)))}}
@@ -98,29 +97,81 @@ $$('[data-s]').forEach(b=>b.onclick=()=>{const i=b.dataset.s==='me'?$('#sMe'):$(
 ['#sMe','#sAdv','#mAdv'].forEach(s=>$(s).addEventListener('input',preview));
 $$('[data-o]').forEach(b=>b.onclick=()=>{F.nObs=Math.max(0,Math.min(99,F.nObs+N(b.dataset.o)));$('#nObs').value=F.nObs;preview()});
 $('#nObs').addEventListener('input',()=>{F.nObs=Math.max(0,Math.min(99,Math.round(N($('#nObs').value))));preview()});
-$('#mVal').onclick=e=>{const b=e.target.closest('button');if(!b)return;F.val=b.dataset.v;renderMatchForm()};
+$('#mMode').onclick=e=>{const b=e.target.closest('[data-m]');if(!b)return;F.mode=b.dataset.m;setMode()};
+function setMode(){$$('#mMode button').forEach(b=>b.classList.toggle('on',b.dataset.m===F.mode));
+ $('#postZone').hidden=F.mode!=='post';$('#liveZone').hidden=F.mode!=='live';$('#mErr').textContent='';
+ const st=$$('#vMatch .step')[1];if(st)st.innerHTML=`<i>2</i> ${F.mode==='live'?'Pendant le match':'Après le match'}`}
 
-$('#mSave').onclick=async()=>{const err=t=>{$('#mErr').textContent=t;toast(t,true)};$('#mErr').textContent='';
- const adv=$('#mAdv').value.trim(),s=scores(),o=curObs();
- if(!adv)return err("Indique le nom de ton adversaire.");
- if(s.me===0&&s.adv===0)return err('Entre le score du match.');
- if(!o.txt)return err('Choisis ton bonus BallStar (étape 1).');
- if(F.nObs>0&&!F.val)return err('Indique qui a validé tes bonus.');
- if(!ME){if(window.ELEVE){ELEVE.changer();await ELEVE.demander();await reload()}if(!ME)return err("Identifie-toi pour enregistrer ton match.")}
- const x=calcXP(CFG,s.me,s.adv,F.nObs),before=ST,now=new Date(),p=n=>String(n).padStart(2,'0');
+/* Enregistre un match (saisi après coup ou en direct) puis lance les animations. */
+const errM=t=>{$('#mErr').textContent=t;toast(t,true);return null};
+async function needMe(){if(!ME&&window.ELEVE){ELEVE.changer();await ELEVE.demander();await reload()}return !!ME}
+async function saveMatch(m){const x=calcXP(CFG,m.me,m.ad,m.nObs),before=ST,now=new Date(),p=n=>String(n).padStart(2,'0');
  const xpCum=before.xp+x.total,lvlAfter=levelOf(xpCum);
  const row={Date:`${now.getFullYear()}-${p(now.getMonth()+1)}-${p(now.getDate())}`,Heure:`${p(now.getHours())}:${p(now.getMinutes())}:${p(now.getSeconds())}`,
-  'Activité':F.act,Adversaire:adv,'Mon score':s.me,'Score adversaire':s.adv,'Résultat':x.win?'Victoire':x.nul?'Égalité':'Défaite','Écart':x.diff,
-  Observable:o.txt,'Origine observable':o.src,'Observables validés':F.nObs,'Observable réussi':F.nObs>0?'Oui':'Non','Validé par':F.nObs>0?F.val:'',
+  'Activité':m.act,Adversaire:m.adv,'Mon score':m.me,'Score adversaire':m.ad,'Résultat':x.win?'Victoire':x.nul?'Égalité':'Défaite','Écart':x.diff,
+  Observable:m.obs,'Origine observable':m.src,'Observables validés':m.nObs,'Observable réussi':m.nObs>0?'Oui':'Non',Saisie:m.saisie,
   'XP match':x.match,'XP victoire':x.victoire,'XP écart':x.ecart,'XP bonus':x.bonus,'XP gagnée':x.total,'XP cumulée':xpCum,Niveau:NIVEAUX[lvlAfter].nom,'Réglages':R_.codeCourt(CFG)};
- try{const ok=await ELEVE.enregistrer(APP_ID,row);if(!ok)return err("Identifie-toi pour enregistrer ton match.")}catch(e){return err("Enregistrement impossible : "+(e.message||e))}
- await reload();
- // remise à zéro du formulaire (on garde l'activité et l'observable)
- $('#sMe').value=0;$('#sAdv').value=0;$('#mAdv').value='';F.nObs=0;F.val=null;
- go('vArene');celebrate(before,ST,x.total)};
+ try{const ok=await ELEVE.enregistrer(APP_ID,row);if(!ok)return errM("Identifie-toi pour enregistrer ton match.")}catch(e){return errM("Enregistrement impossible : "+(e.message||e))}
+ await reload();return{before,x}}
+function checkPrep(){const adv=$('#mAdv').value.trim(),o=curObs();
+ if(!adv)return errM("Indique le nom de ton adversaire.");if(!o.txt)return errM('Choisis ton bonus BallStar (étape 1).');return{adv,o}}
 
-async function celebrate(before,after,gain){const fly=document.createElement('div');fly.className='xpfly';fly.textContent=`+${gain} XP`;document.body.appendChild(fly);setTimeout(()=>fly.remove(),1600);
- await new Promise(r=>setTimeout(r,1300));
+$('#mSave').onclick=async()=>{$('#mErr').textContent='';const pr=checkPrep();if(!pr)return;const s=scores();
+ if(s.me===0&&s.adv===0)return errM('Entre le score du match.');
+ if(!await needMe())return errM("Identifie-toi pour enregistrer ton match.");
+ const r=await saveMatch({act:F.act,adv:pr.adv,me:s.me,ad:s.adv,nObs:F.nObs,obs:pr.o.txt,src:pr.o.src,saisie:'Après le match'});if(!r)return;
+ $('#sMe').value=0;$('#sAdv').value=0;$('#mAdv').value='';F.nObs=0;
+ go('vArene');celebrate(r.before,ST,r.x.total)};
+
+/* ───────── Mode direct : un observateur suit un seul joueur pendant le match ───────── */
+const LIVE_KEY=()=>'BALLSTAR_LIVE_'+(ME?ME.id:'anon');
+let LIVE=null,wake=null;
+const saveLive=()=>ls.set(LIVE_KEY(),LIVE?JSON.stringify(LIVE):'');
+function fly(txt,sub,cls){$$('.xpfly').forEach(e=>e.remove());const f=document.createElement('div');f.className='xpfly'+(cls?' '+cls:'');f.innerHTML=`${esc(txt)}${sub?`<small>${esc(sub)}</small>`:''}`;document.body.appendChild(f);setTimeout(()=>f.remove(),1600)}
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+async function keepAwake(on){try{if(on&&'wakeLock' in navigator&&!wake)wake=await navigator.wakeLock.request('screen');if(!on&&wake){await wake.release();wake=null}}catch(e){}}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&LIVE){wake=null;keepAwake(true)}});
+$('#lStart').onclick=async()=>{$('#mErr').textContent='';const pr=checkPrep();if(!pr)return;
+ if(!await needMe())return errM("Identifie le joueur observé avant de lancer le direct.");
+ LIVE={act:F.act,adv:pr.adv,obs:pr.o.txt,src:pr.o.src,me:0,ad:0,nObs:0,hist:[],t:Date.now()};saveLive();openLive(true)};
+function openLive(first){document.body.classList.add('live');go('vLive');renderLive();keepAwake(true);
+ if(first)setTimeout(()=>fly(`+${CFG.xp.joue} XP`,'Match joué'),350)}
+function liveXP(){return calcXP(CFG,LIVE.me,LIVE.ad,LIVE.nObs)}
+function renderLive(bump){if(!LIVE)return;const L=LIVE,a=activeAvatar(),xpNow=CFG.xp.joue+Math.min(L.nObs,CFG.xp.maxObs)*CFG.xp.bonus;
+ const act=ACTS.find(z=>z.n===L.act)||{e:'🎮'};$('#lAct').textContent=`${act.e} ${L.act}`;
+ $('#lAva').innerHTML=avatarSVG(a,{k:'lv',stars:starsOf(a)});$('#lName').textContent=ME?`${ME.prenom} ${String(ME.nom).toUpperCase()}`:'Joueur';
+ $('#lAdvN').textContent=L.adv;$('#lMeN').textContent=ME?ME.prenom:'Moi';$('#lAdN').textContent=L.adv;
+ $('#lMeS').textContent=L.me;$('#lAdS').textContent=L.ad;$('#lObs').textContent=L.obs;
+ const c=Math.min(L.nObs,CFG.xp.maxObs);$('#lCnt').textContent=`${L.nObs} réussi${L.nObs>1?'s':''} · ${c} / ${CFG.xp.maxObs} compté${c>1?'s':''} en XP`;
+ const x=$('#lXP');x.textContent='+'+xpNow;if(bump){x.classList.remove('bump');void x.offsetWidth;x.classList.add('bump')}
+ // barre de niveau avec l'XP du match en cours
+ const tot=ST.xp+xpNow,lv=levelOf(tot),s=CFG.seuils,nx=lv<3?s[lv+1]:null;
+ $('#lBar').style.width=(nx?Math.max(2,Math.min(100,(tot-s[lv])/(nx-s[lv])*100)):100)+'%';$('#lBarT').textContent=nx?`${tot} / ${nx} XP`:`${tot} XP`;
+ const w=calcXP(CFG,Math.max(L.me,L.ad+1),L.ad,0);
+ $('#lHint').innerHTML=(lv>ST.lvl?`🔥 Niveau ${NIVEAUX[lv].nom} atteint à la fin du match ! · `:'')+(L.me>L.ad?`En tête : la victoire rapporterait +${CFG.xp.victoire} XP${liveXP().ecart?` et +${liveXP().ecart} XP d'écart`:''}`:L.me===L.ad?'Égalité : gagne le match pour +'+CFG.xp.victoire+' XP':`Mené de ${L.ad-L.me} point${L.ad-L.me>1?'s':''} : accroche-toi !`)}
+function act(type){if(!LIVE)return;LIVE.hist.push(type);
+ if(type==='me'){LIVE.me++;pop('#lMeS')}else if(type==='ad'){LIVE.ad++;pop('#lAdS')}
+ else if(type==='bonus'){LIVE.nObs++;if(LIVE.nObs<=CFG.xp.maxObs)fly(`+${CFG.xp.bonus} XP`,'Bonus BallStar');else fly('Bonus !',`déjà ${CFG.xp.maxObs} comptés en XP`,'small')}
+ saveLive();renderLive(type==='bonus')}
+function pop(sel){const e=$(sel);e.classList.remove('pop');void e.offsetWidth;e.classList.add('pop')}
+$('#lMe').onclick=()=>act('me');$('#lAd').onclick=()=>act('ad');$('#lBonus').onclick=()=>act('bonus');
+$$('#vLive .minus').forEach(b=>b.onclick=()=>{if(!LIVE)return;const k=b.dataset.l;if(LIVE[k]>0){LIVE[k]--;const i=LIVE.hist.lastIndexOf(k);if(i>=0)LIVE.hist.splice(i,1)}saveLive();renderLive()});
+$('#lUndo').onclick=()=>{if(!LIVE||!LIVE.hist.length)return toast('Rien à annuler.');const t=LIVE.hist.pop();if(t==='me')LIVE.me--;else if(t==='ad')LIVE.ad--;else LIVE.nObs--;
+ saveLive();renderLive(t==='bonus');toast(t==='bonus'?'Dernier bonus annulé':'Dernier point annulé')};
+function closeLive(){LIVE=null;saveLive();keepAwake(false);document.body.classList.remove('live')}
+$('#lQuit').onclick=async()=>{const v=await modal('<h2>Abandonner le direct ?</h2><p>Le match en cours ne sera pas enregistré et aucune XP ne sera gagnée.</p>',[{t:'Abandonner',v:1,cls:'r'},{t:'Continuer le match',v:0,cls:'g'}]);
+ if(v){closeLive();go('vMatch');setMode()}};
+$('#lEnd').onclick=async()=>{const L=LIVE;if(!L)return;if(!L.me&&!L.ad)return toast('Le score est encore 0 – 0.',true);
+ const x=liveXP();const v=await modal(`<h2>🏁 Fin du match ?</h2><p style="font-family:var(--fd);font-size:1.8rem;margin:6px 0">${L.me} – ${L.ad}</p><p>${esc(ME?ME.prenom:'Moi')} contre ${esc(L.adv)} · ${x.win?'Victoire':x.nul?'Égalité':'Défaite'} · ${L.nObs} bonus BallStar</p>`,[{t:'Valider le match',v:1},{t:'Continuer',v:0,cls:'g'}]);
+ if(!v)return;
+ if(x.victoire){fly(`+${x.victoire} XP`,'Victoire !');$('#lXP').textContent='+'+(x.match+x.bonus+x.victoire);await wait(1300)}
+ if(x.ecart){fly(`+${x.ecart} XP`,`Écart de ${x.diff} points`);$('#lXP').textContent='+'+x.total;await wait(1300)}
+ const r=await saveMatch({act:L.act,adv:L.adv,me:L.me,ad:L.ad,nObs:L.nObs,obs:L.obs,src:L.src,saisie:'Direct'});
+ if(!r){toast("Le match n'a pas pu être enregistré. Le direct reste ouvert.",true);return}
+ closeLive();$('#mAdv').value='';go('vArene');celebrate(r.before,ST,r.x.total,true)};
+function resumeLive(){if(LIVE||!ME)return;try{const o=JSON.parse(ls.get(LIVE_KEY())||'null');if(o&&o.act){LIVE=o;openLive(false);toast('Direct en cours repris')}}catch(e){}}
+
+async function celebrate(before,after,gain,quiet){if(!quiet){fly(`+${gain} XP`);await wait(1300)}else await wait(300);
  if(after.lvl>before.lvl){const a=AVATARS.find(v=>v.niveau===after.lvl);
   await showUnlock(`${badgeSVG(after.lvl,70)}<h2>Niveau ${NIVEAUX[after.lvl].nom} !</h2>`,a,`Tu débloques l'avatar <b>${esc(a.nom)}</b>, ${esc(a.titre.toLowerCase())}.`)}
  for(const d of after.defis){const b=before.defis.find(x=>x.id===d.id);if(d.etoiles<=b.etoiles)continue;const a=AVATARS.find(v=>v.defi===d.id);
@@ -200,6 +251,6 @@ $('#cfgFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(
 function renderAll(){renderArene();renderDefis();renderAvatars();renderBilan();if(!$('#vMatch').hidden)renderMatchForm()}
 document.addEventListener('click',async e=>{if(e.target.id==='bIdent'&&window.ELEVE){ELEVE.changer();await ELEVE.demander();reload()}});
 document.addEventListener('eleve-change',()=>reload());
-(async()=>{try{if(window.ELEVE){ELEVE.bandeau($('#who'));await reload();if(!ME)await ELEVE.demander();await reload()}else renderAll()}catch(e){console.error(e);renderAll()}})();
+(async()=>{try{if(window.ELEVE){ELEVE.bandeau($('#who'));await reload();if(!ME)await ELEVE.demander();await reload();resumeLive()}else renderAll()}catch(e){console.error(e);renderAll()}})();
 if('serviceWorker' in navigator&&location.protocol==='https:'&&!window.BALLSTAR_NO_SW)navigator.serviceWorker.register('sw.js').catch(()=>{});
 })();

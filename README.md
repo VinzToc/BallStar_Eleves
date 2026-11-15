@@ -10,7 +10,7 @@ Dépôt conseillé : `BallStar_Eleves` → https://vinztoc.github.io/BallStar_El
 | Match joué | +10 XP |
 | Victoire | +25 XP |
 | Écart au score (victoire seulement) | ≥ 3 pts : +5 · ≥ 6 pts : +10 · ≥ 10 pts : +15 |
-| Chaque bonus BallStar validé pendant le match (action motrice choisie avant le match, validée par l'adversaire, un observateur ou l'élève) | +5 XP, 5 au maximum par match |
+| Chaque bonus BallStar validé pendant le match (action motrice choisie avant le match) | +5 XP, 5 au maximum par match |
 
 Niveaux : Bronze (0), Argent (500), Or (1000), Star (1500 XP), pensés pour un cycle d'au moins 16 séances. Chaque niveau débloque un avatar.
 
@@ -34,6 +34,10 @@ Débloqués avec le total d'étoiles de défis (sur 18) : Comète (6), Éclipse 
 
 ## Installation
 À l'ouverture, l'appli propose de s'installer si ce n'est pas déjà fait (bouton « Installer » sur Chrome, Edge et Android ; rappel « Partager → Sur l'écran d'accueil » sur iPhone et iPad). « Plus tard » la masque jusqu'à la prochaine ouverture.
+
+## Deux façons d'enregistrer un match
+- **📝 Match terminé** : on saisit le score et le nombre de bonus BallStar après le match.
+- **🔴 En direct** : un observateur suit **un seul joueur** avec son téléphone. Il touche « +1 point » pour chaque point et « Bonus BallStar réussi ! » à chaque bonus. L'XP s'affiche en direct avec les animations (+10 au départ, +5 par bonus, puis victoire et écart à la fin). L'écran reste allumé, et un direct interrompu (appel, rechargement) reprend à la réouverture. Chaque match garde sa façon d'être saisi (colonne « Saisie » : Direct ou Après le match).
 
 ## Arène
 Boutons « 📜 Règles du jeu » (pop-up avec le barème, les niveaux et les paliers des défis) et « 📥 Importer les règles du prof ».
