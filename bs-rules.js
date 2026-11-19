@@ -131,9 +131,18 @@ function versLignes(cfg){cfg=clean(cfg);const r=[['Paramètre','Activité','Vale
  cfg.legendes.forEach((v,i)=>r.push(['Avatar légendaire',String(i+1),v,'']));
  if(cfg.nuage){r.push(['Lien Nuage','',cfg.nuage,'']);if(cfg.nuageMdp)r.push(['Mot de passe Nuage demandé','','Oui',''])}
  ACTS.forEach(a=>{const c=cfg.acts[a.n];c.obs.forEach(o=>r.push(['Bonus BallStar',a.n,o,'']));if(c.impose)r.push(['Bonus BallStar imposé',a.n,c.impose,''])});
+ r.push(['Format du fichier','','R2','']);const r2=signeLignes(r);r.push(['Code de contrôle R2','',r2,'']);
+ /* + ancien code, pour les applis élèves pas encore mises à jour */
  r.push(['Code de contrôle','',signe(cfg),'']);return r}
+/* Code de contrôle « R2 » (depuis la v2.2) : calculé sur le contenu même des lignes du fichier, et non sur la structure interne
+   des réglages. Un fichier reste donc valable entre deux versions de l'appli élève et de l'appli prof. */
+const cellTxt=v=>{if(v==null)return'';if(typeof v==='number')return String(v);const t=String(v).normalize('NFC').trim();return /^-?\d+(\.\d+)?$/.test(t)?String(Number(t)):t};
+function signeLignes(rows){return hash(SALT+'R2'+rows.filter(r=>r&&!norm(r[0]).startsWith('codedecontrole')).map(r=>Array.from(r,cellTxt).slice(0,4).join('\u001f')).join('\u001e'))}
+/* Fichiers des versions 2.0 (lien Nuage + champ mot de passe) : encore acceptés. */
+function signe20(cfg,pw){const k=clean(cfg);if(k.xp.obsMatch===DEF.xp.obsMatch&&k.xp.obsBonus===DEF.xp.obsBonus){delete k.xp.obsMatch;delete k.xp.obsBonus}
+ delete k.nuageMdp;if(!k.nuage)delete k.nuage;else k.nuagePw=String(pw||'').trim();return hash(SALT+JSON.stringify(k))}
 /* Lit la feuille ; retourne {cfg, valide} — valide=false si le code de contrôle manque ou ne correspond pas. */
-function depuisLignes(rows){const c={xp:{},ecart:[],seuils:[0,0,0,0],acts:{},defis:{},legendes:[0,0,0,0]};let code='',seen=0;
+function depuisLignes(rows){const c={xp:{},ecart:[],seuils:[0,0,0,0],acts:{},defis:{},legendes:[0,0,0,0]};let code='',codeR2='',seen=0,pw20='';
  for(const row of rows.slice(1)){const [p,a,v,x]=Array.from(row||[],z=>z==null?'':z),k=norm(p),act=ACTS.find(z=>norm(z.n)===norm(a));
   if(k==='xpmatchjoue'){c.xp.joue=N(x);seen++}else if(k==='xpvictoire'){c.xp.victoire=N(x);seen++}else if(k==='xpobservablereussi'||k==='xpparobservablevalide'||k==='xpparbonusballstarvalide'){c.xp.bonus=N(x);seen++}
   else if(k.startsWith('observablescomptes')||k.startsWith('bonusballstarcomptes')){c.xp.maxObs=N(v);seen++}
@@ -141,16 +150,18 @@ function depuisLignes(rows){const c={xp:{},ecart:[],seuils:[0,0,0,0],acts:{},def
   else if(k==='xpobservateurparbonussaisi'){c.xp.obsBonus=N(x);seen++}
   else if(k==='liennuage'){c.nuage=String(v).trim();seen++}
   else if(k==='motdepassenuagedemande'){c.nuageMdp=norm(v)==='oui';seen++}
+  else if(k==='motdepassenuage'){pw20=String(v).trim();c.nuageMdp=!!pw20}
   else if(k==='avatarlegendaire'){const i=N(a)-1;if(i>=0&&i<4){c.legendes[i]=N(v);seen++}}
   else if(/^defi[123]etoiles?$/.test(k)){const d=DEFIS.find(z=>norm(z.nom)===norm(a));if(d){c.defis=c.defis||{};(c.defis[d.id]=c.defis[d.id]||[0,0,0])[N(k[4])-1]=N(v);seen++}}
   else if(k==='bonusecart'){c.ecart.push([N(v),N(x)]);seen++}
   else if(k==='seuilniveau'){const i=NIV.findIndex(n=>norm(n)===norm(a));if(i>0){c.seuils[i]=N(v);seen++}}
   else if((k==='observable'||k==='bonusballstar')&&act&&String(v).trim()){c.acts[act.n]=c.acts[act.n]||{obs:[],impose:''};c.acts[act.n].obs.push(String(v).trim());seen++}
   else if((k==='observableimpose'||k==='bonusballstarimpose')&&act){c.acts[act.n]=c.acts[act.n]||{obs:[],impose:''};c.acts[act.n].impose=String(v).trim();seen++}
-  else if(k==='codedecontrole')code=String(v).trim()}
+  else if(k==='codedecontrole')code=String(v).trim()
+  else if(k==='codedecontroler2')codeR2=String(v).trim()}
  if(!seen)throw new Error('aucun réglage reconnu');
  if(!c.seuils[1])c.seuils=DEF.seuils.slice();
- const cfg=clean(c);return{cfg,valide:!!code&&code===signe(cfg)}}
+ const cfg=clean(c);return{cfg,valide:(!!codeR2&&codeR2===signeLignes(rows))||(!!code&&(code===signe(cfg)||code===signe20(cfg,pw20)))}}
 
 window.BSRULES={lienNuage,isObsRow,obsXP,encodeMatch,decodeMatch,ACTS,NIV,DEF,DEFIS,DEFIS_DEF,LEGENDES_DEF,etatDefi,nbObs,clean,isDefault,signe,codeCourt,calcXP,levelOf,maxEcartXP,isWin,isLoss,isOk,sortRows,progression,CFG_SHEET,versLignes,depuisLignes,norm,N};
 })();

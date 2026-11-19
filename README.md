@@ -79,3 +79,8 @@ Dans `apps.json` du dépôt `Applis_EPS_Eleves`, ajouter (et copier `icons/icon-
 ## Bibliothèques incluses (dossier `lib/`)
 - `qrcode.js` : QR Code Generator for JavaScript, Kazuhiko Arase, licence MIT.
 - `jsQR.js` : lecture de QR codes, Cosmo Wolfe, licence Apache-2.0.
+
+## Compatibilité des fichiers de réglages (v2.2 élève / v1.7 prof)
+- Le code de contrôle « R2 » est calculé sur le contenu du fichier : un fichier de réglages reste valable d'une version à l'autre.
+- Le fichier contient aussi l'ancien code, pour les applis élèves pas encore mises à jour.
+- Les deux applis utilisent désormais la dernière version dès qu'il y a du réseau (service worker « réseau d'abord »).

@@ -361,7 +361,9 @@ $('#aImp').onclick=()=>$('#cfgFile').click();
 $('#cfgFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
  try{const sh=(await BSX.read(await f.arrayBuffer())).find(s=>R_.norm(s.name)===R_.norm(CFG_SHEET));if(!sh)throw new Error('ce n\'est pas un fichier de réglages Ball Star');
   const r=R_.depuisLignes(sh.rows);
-  if(!r.valide)throw new Error('ce fichier a été modifié ou ne vient pas de l\'interface prof. Demande le fichier original à ton professeur.');
+  if(!r.valide){await modal(`<h2>⚠️ Réglages non reconnus</h2><p>Ce fichier n'a pas pu être vérifié (version ${esc(typeof APP_VERSION!=='undefined'?APP_VERSION:'')}).</p>
+   <div class="prev" style="text-align:left"><div style="display:block">1. <b>Ferme complètement Ball Star et rouvre-la</b> avec du réseau pour récupérer la dernière version, puis réimporte le fichier.</div>
+   <div style="display:block">2. Si ça ne marche toujours pas, demande à ton professeur le fichier d'origine : un fichier ouvert puis réenregistré dans un tableur (Excel, LibreOffice) peut être refusé.</div></div>`,[{t:'OK',v:1}]);return}
   CFG=r.cfg;saveCfg();ST=state(ROWS);renderAll();toast('Réglages du professeur importés ✔')}
  catch(x){toast('Fichier refusé : '+(x.message||x),true)}};
 
