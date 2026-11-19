@@ -29,6 +29,8 @@ const DEF={xp:{joue:10,victoire:25,bonus:5,maxObs:5,obsMatch:20,obsBonus:2},ecar
  }};
 
 /* Remet un objet de réglages dans une forme propre et complète (ordre des clés fixe → code de contrôle stable). */
+/* Lien de partage Nextcloud (Nuage apps.education.fr ou autre) : https://serveur/(index.php/)s/JETON */
+function lienNuage(u){u=String(u||'').trim();if(!u)return'';try{const x=new URL(u);if(!/^https:$/.test(x.protocol)&&x.hostname!=='localhost')return'';return /\/s\/[A-Za-z0-9]+/.test(x.pathname)?x.origin+x.pathname.replace(/\/+$/,''):''}catch(e){return''}}
 function clean(c){c=c||{};const d=clone(DEF),x=c.xp||{};
  const out={xp:{joue:N(x.joue??d.xp.joue),victoire:N(x.victoire??d.xp.victoire),bonus:N(x.bonus??d.xp.bonus),maxObs:Math.max(1,N(x.maxObs??d.xp.maxObs)),obsMatch:N(x.obsMatch??d.xp.obsMatch),obsBonus:N(x.obsBonus??d.xp.obsBonus)},
   ecart:(Array.isArray(c.ecart)?c.ecart:d.ecart).map(e=>[N(e[0]),N(e[1])]).filter(e=>e[0]>0).sort((a,b)=>a[0]-b[0]),
@@ -37,6 +39,8 @@ function clean(c){c=c||{};const d=clone(DEF),x=c.xp||{};
  for(const k of Object.keys(DEFIS_DEF)){const v=(c.defis||{})[k];out.defis[k]=Array.isArray(v)&&v.length===3&&v.every(z=>N(z)>0)?v.map(N):DEFIS_DEF[k].slice()}
  for(const a of ACTS){const s=(c.acts||{})[a.n]||{},obs=Array.isArray(s.obs)&&s.obs.length?[...new Set(s.obs.map(o=>String(o).trim()).filter(Boolean))]:d.acts[a.n].obs;
   out.acts[a.n]={impose:String(s.impose||'').trim(),obs}}
+ /* Envoi vers Nuage (facultatif) : lien de partage « dépôt de fichiers » saisi par le prof. Vide par défaut. */
+ out.nuage=lienNuage(c.nuage);out.nuagePw=out.nuage?String(c.nuagePw||'').trim():'';
  return out}
 const isDefault=c=>JSON.stringify(clean(c))===JSON.stringify(clean(DEF));
 
@@ -46,7 +50,7 @@ function hash(str){let h1=0xdeadbeef,h2=0x41c6ce57;for(let i=0;i<str.length;i++)
  h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);
  return(4294967296*(2097151&h2)+(h1>>>0)).toString(36).toUpperCase().padStart(11,'0')}
 /* Les XP d'observateur (ajoutés en v1.8) ne changent pas le code quand ils gardent leur valeur par défaut : les anciens fichiers restent valables. */
-const signe=c=>{const k=clean(c);if(k.xp.obsMatch===DEF.xp.obsMatch&&k.xp.obsBonus===DEF.xp.obsBonus){delete k.xp.obsMatch;delete k.xp.obsBonus}return hash(SALT+JSON.stringify(k))};
+const signe=c=>{const k=clean(c);if(k.xp.obsMatch===DEF.xp.obsMatch&&k.xp.obsBonus===DEF.xp.obsBonus){delete k.xp.obsMatch;delete k.xp.obsBonus}if(!k.nuage){delete k.nuage;delete k.nuagePw}return hash(SALT+JSON.stringify(k))};
 const codeCourt=c=>isDefault(c)?'Défaut':signe(c).slice(-6);
 
 /* XP d'un match.  nObs = nombre d'observables validés pendant le match (compté jusqu'au maximum fixé par le prof). */
@@ -125,6 +129,7 @@ function versLignes(cfg){cfg=clean(cfg);const r=[['Paramètre','Activité','Vale
  cfg.ecart.forEach(e=>r.push(['Bonus écart','',e[0],e[1]]));[1,2,3].forEach(i=>r.push(['Seuil niveau',NIV[i],cfg.seuils[i],'']));
  DEFIS.forEach(d=>cfg.defis[d.id].forEach((v,i)=>r.push(['Défi '+(i+1)+' étoile'+(i?'s':''),d.nom,v,''])));
  cfg.legendes.forEach((v,i)=>r.push(['Avatar légendaire',String(i+1),v,'']));
+ if(cfg.nuage){r.push(['Lien Nuage','',cfg.nuage,'']);if(cfg.nuagePw)r.push(['Mot de passe Nuage','',cfg.nuagePw,''])}
  ACTS.forEach(a=>{const c=cfg.acts[a.n];c.obs.forEach(o=>r.push(['Bonus BallStar',a.n,o,'']));if(c.impose)r.push(['Bonus BallStar imposé',a.n,c.impose,''])});
  r.push(['Code de contrôle','',signe(cfg),'']);return r}
 /* Lit la feuille ; retourne {cfg, valide} — valide=false si le code de contrôle manque ou ne correspond pas. */
@@ -134,6 +139,8 @@ function depuisLignes(rows){const c={xp:{},ecart:[],seuils:[0,0,0,0],acts:{},def
   else if(k.startsWith('observablescomptes')||k.startsWith('bonusballstarcomptes')){c.xp.maxObs=N(v);seen++}
   else if(k==='xpobservateurparmatchobserve'){c.xp.obsMatch=N(x);seen++}
   else if(k==='xpobservateurparbonussaisi'){c.xp.obsBonus=N(x);seen++}
+  else if(k==='liennuage'){c.nuage=String(v).trim();seen++}
+  else if(k==='motdepassenuage'){c.nuagePw=String(v).trim();seen++}
   else if(k==='avatarlegendaire'){const i=N(a)-1;if(i>=0&&i<4){c.legendes[i]=N(v);seen++}}
   else if(/^defi[123]etoiles?$/.test(k)){const d=DEFIS.find(z=>norm(z.nom)===norm(a));if(d){c.defis=c.defis||{};(c.defis[d.id]=c.defis[d.id]||[0,0,0])[N(k[4])-1]=N(v);seen++}}
   else if(k==='bonusecart'){c.ecart.push([N(v),N(x)]);seen++}
@@ -145,5 +152,5 @@ function depuisLignes(rows){const c={xp:{},ecart:[],seuils:[0,0,0,0],acts:{},def
  if(!c.seuils[1])c.seuils=DEF.seuils.slice();
  const cfg=clean(c);return{cfg,valide:!!code&&code===signe(cfg)}}
 
-window.BSRULES={isObsRow,obsXP,encodeMatch,decodeMatch,ACTS,NIV,DEF,DEFIS,DEFIS_DEF,LEGENDES_DEF,etatDefi,nbObs,clean,isDefault,signe,codeCourt,calcXP,levelOf,maxEcartXP,isWin,isLoss,isOk,sortRows,progression,CFG_SHEET,versLignes,depuisLignes,norm,N};
+window.BSRULES={lienNuage,isObsRow,obsXP,encodeMatch,decodeMatch,ACTS,NIV,DEF,DEFIS,DEFIS_DEF,LEGENDES_DEF,etatDefi,nbObs,clean,isDefault,signe,codeCourt,calcXP,levelOf,maxEcartXP,isWin,isLoss,isOk,sortRows,progression,CFG_SHEET,versLignes,depuisLignes,norm,N};
 })();

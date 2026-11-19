@@ -298,6 +298,26 @@ async function exporter(){if(!ME){toast("Identifie-toi d'abord.",true);return fa
   const name=[fileSafe(ME.nom).toUpperCase(),fileSafe(ME.prenom),fileSafe(ME.classe)].filter(Boolean).join('_')+'_BallStar.xlsx';
   EPS.downloadXLSX(o,name);toast('Fichier exporté : '+name);return true}catch(e){toast('Export impossible : '+(e.message||e),true);return false}}
 $('#bExport').onclick=exporter;
+
+/* ───────── Envoi vers Nuage (si le prof a renseigné un lien de dépôt dans ses réglages) ─────────
+   Envoi direct par WebDAV sur le partage public Nextcloud ; si le serveur ou le navigateur le refuse,
+   le fichier est enregistré sur l'appareil et la page de dépôt Nuage s'ouvre pour le déposer. */
+const nomFichier=(suffixe)=>[fileSafe(ME.nom).toUpperCase(),fileSafe(ME.prenom),fileSafe(ME.classe)].filter(Boolean).join('_')+'_BallStar'+(suffixe||'')+'.xlsx';
+async function putNuage(bytes,name){const u=new URL(CFG.nuage),tok=(/\/s\/([A-Za-z0-9]+)/.exec(u.pathname)||[])[1],base=u.origin+u.pathname.split(/\/(?:index\.php\/)?s\//)[0],f=encodeURIComponent(name),pw=CFG.nuagePw||'';
+ const essais=[{url:`${base}/public.php/dav/files/${tok}/${f}`,h:pw?{Authorization:'Basic '+btoa('anonymous:'+pw)}:{}},{url:`${base}/public.php/webdav/${f}`,h:{Authorization:'Basic '+btoa(tok+':'+pw)}}];
+ let last='';for(const e of essais){try{const r=await fetch(e.url,{method:'PUT',body:new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),credentials:'omit',headers:{'X-Requested-With':'XMLHttpRequest',...e.h}});
+   if(r.ok)return true;last='HTTP '+r.status}catch(x){last='réseau'}}
+ throw new Error(last)}
+$('#bNuage').onclick=async()=>{if(!ME)return toast("Identifie-toi d'abord.",true);if(!ROWS.length)return toast("Aucun match à envoyer pour l'instant.",true);if(!CFG.nuage)return;
+ const b=$('#bNuage');b.disabled=true;b.textContent='☁️ Envoi en cours…';
+ const d=new Date(),p=n=>String(n).padStart(2,'0'),name=nomFichier(`_${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}_${p(d.getHours())}h${p(d.getMinutes())}`);
+ let bytes;try{bytes=await EPS.exportXLSX({ids:[ME.id],apps:[APP_ID],sansEleves:true})}catch(e){b.disabled=false;b.textContent='☁️ Envoyer vers Nuage';return toast('Export impossible : '+(e.message||e),true)}
+ try{await putNuage(bytes,name);toast('☁️ Sauvegarde envoyée sur Nuage ✔');await modal(`<h2>☁️ Envoyé !</h2><p>Ta sauvegarde <b>${esc(name)}</b> est dans le dossier Nuage de ton professeur.</p>`,[{t:'OK',v:1}])}
+ catch(e){EPS.downloadXLSX(bytes,name);
+  await modal(`<h2>☁️ Dépôt sur Nuage</h2><p>L'envoi direct n'a pas fonctionné sur cet appareil. Pas de souci, en deux étapes :</p>
+   <div class="prev" style="text-align:left"><div style="display:block">1. Ta sauvegarde <b>${esc(name)}</b> vient d'être enregistrée sur ton appareil (dossier Téléchargements).</div><div style="display:block">2. Ouvre Nuage et dépose ce fichier.</div></div>
+   <p style="margin-top:12px"><a class="btn v" href="${esc(CFG.nuage)}" target="_blank" rel="noopener">☁️ Ouvrir Nuage</a></p>`,[{t:'Fermer',v:1,cls:'g'}])}
+ finally{b.disabled=false;b.textContent='☁️ Envoyer vers Nuage'}};
 $('#bClear').onclick=async()=>{if(!ME)return toast("Aucune donnée : tu n'es pas identifié.",true);
  const v=await modal(`<h2>⚠️ Effacer Ball Star ?</h2><p>As-tu pensé à <b>exporter ta sauvegarde (.xlsx)</b> ? Effacer supprime définitivement tes matchs, ton XP et tes avatars Ball Star sur cet appareil.</p>`,
   [{t:'⬇️ Exporter d\'abord',v:'exp'},{t:'Effacer',v:'del',cls:'r'},{t:'Annuler',v:'',cls:'g'}]);
@@ -329,7 +349,7 @@ $('#cfgFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(
  catch(x){toast('Fichier refusé : '+(x.message||x),true)}};
 
 /* ───────── Rendu global & démarrage ───────── */
-function renderAll(){renderArene();renderDefis();renderAvatars();renderBilan();if(!$('#vMatch').hidden)renderMatchForm()}
+function renderAll(){$('#nuageZone').hidden=!CFG.nuage;renderArene();renderDefis();renderAvatars();renderBilan();if(!$('#vMatch').hidden)renderMatchForm()}
 document.addEventListener('click',async e=>{if(e.target.id==='bIdent'&&window.ELEVE){ELEVE.changer();await ELEVE.demander();reload()}});
 document.addEventListener('eleve-change',()=>reload());
 (async()=>{try{if(window.ELEVE){ELEVE.bandeau($('#who'));await reload();if(!ME)await ELEVE.demander();await reload();resumeLive();const h=/[#&]m=([\w-]+)/.exec(location.hash);if(h){history.replaceState(null,'',location.pathname+location.search);importMatch(h[1])}}else renderAll()}catch(e){console.error(e);renderAll()}})();

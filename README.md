@@ -52,6 +52,12 @@ Boutons « 📜 Règles du jeu » (pop-up avec le barème, les niveaux et les pa
 - Chaque match enregistre le code des réglages utilisés (colonne « Réglages »).
 - De toute façon, Ball Star Prof recalcule l'XP avec les réglages du professeur.
 
+## Envoyer vers Nuage (facultatif)
+Si le professeur colle dans Ball Star Prof le lien de partage d'un dossier Nuage (cloud de l'Éducation nationale, ou tout Nextcloud), le Bilan de l'élève affiche « ☁️ Envoyer vers Nuage ». Sans lien dans les réglages, aucun bouton.
+- Envoi direct du fichier `NOM_Prenom_Classe_BallStar_AAAA-MM-JJ_HHhMM.xlsx` sur le partage (WebDAV public).
+- Si le serveur ou le navigateur refuse l'envoi direct, le fichier est enregistré sur l'appareil et la page de dépôt Nuage s'ouvre pour le déposer.
+- Le lien (et son mot de passe éventuel) arrive chez l'élève par le fichier de réglages signé : un lien modifié à la main est refusé.
+
 ## Données (consignes du portail)
 - Identification par `eleve-core.js` (nom, prénom, classe issus du portail Applis EPS Élèves, sinon saisis par l'élève).
 - Une ligne par match dans la feuille **ballstar** de la base locale « EPSEleves » : récupérée automatiquement par le portail.
