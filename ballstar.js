@@ -204,20 +204,21 @@ function resumeLive(){if(LIVE||!ME)return;try{const o=JSON.parse(ls.get(LIVE_KEY
 
 /* ───────── QR code du match observé ───────── */
 function codeOf(row){return R_.encodeMatch({id:row['ID match'],d:row.Date,h:String(row.Heure||'').slice(0,5),a:row['Activité'],o:meName(),oc:ME?ME.classe||'':'',
- p:[[row['Joueur A'],N(row['Score A']),row['Bonus A']||'',N(row['Bonus A validés'])],[row['Joueur B'],N(row['Score B']),row['Bonus B']||'',N(row['Bonus B validés'])]]})}
-function qrSVG(text){const q=qrcode(0,'M');q.addData(text);q.make();return q.createSvgTag({cellSize:4,margin:2,scalable:true})}
-function showQR(row){const url=location.origin+location.pathname+'#m='+codeOf(row);
+ p:[[row['Joueur A'],N(row['Score A']),row['Bonus A']||'',N(row['Bonus A validés'])],[row['Joueur B'],N(row['Score B']),row['Bonus B']||'',N(row['Bonus B validés'])]]},CFG)}
+/* Marge blanche de 4 modules (norme QR) : indispensable pour les lecteurs anciens. */
+function qrSVG(text){qrcode.stringToBytes=qrcode.stringToBytesFuncs['UTF-8'];const q=qrcode(0,'M');q.addData(text,'Byte');q.make();return q.createSvgTag({cellSize:8,margin:4,scalable:true})}
+function showQR(row){const code=codeOf(row);
  const P=[['A','B'],['B','A']].map(([a,b])=>({n:row['Joueur '+a],x:calcXP(CFG,row['Score '+a],row['Score '+b],row['Bonus '+a+' validés'])}));
  return modal(`<h2>📱 QR code du match</h2><p style="margin:2px 0">${esc(row['Joueur A'])} ${N(row['Score A'])} – ${N(row['Score B'])} ${esc(row['Joueur B'])}</p>
- <div class="qrbox">${qrSVG(url)}</div>
- <p class="mut">Chaque joueur ouvre Ball Star : <b>Arène → 📷 Scanner un match observé</b> (ou vise ce code avec l'appareil photo du téléphone). Le match s'ajoute à son historique.</p>
+ <div class="qrbox">${qrSVG(code)}</div>
+ <p class="mut">Chaque joueur ouvre Ball Star : <b>Arène → 📷 Scanner un match observé</b>. Le match s'ajoute à son historique.</p><p class="mut" style="font-size:.78rem">💡 Lecture difficile ? Monte la luminosité de ton écran au maximum et éloigne un peu les téléphones.</p>
  <div class="qrsum">${P.map(p=>`<div>${esc(p.n)}<b>+${p.x.total} XP</b></div>`).join('')}</div>
  <p class="mut" style="font-size:.75rem">Tu pourras réafficher ce code depuis ton Bilan. Ton prof peut aussi attribuer le match aux joueurs en important ton fichier.</p>`,[{t:'Fermer',v:1}])}
 
 /* ───────── Scanner un match observé (côté joueur) ───────── */
 let scanStream=null,scanTimer=null;
 function stopScan(){if(scanTimer)clearInterval(scanTimer);scanTimer=null;if(scanStream)scanStream.getTracks().forEach(t=>t.stop());scanStream=null}
-function codeFrom(text){const m=/[#&?]m=([\w-]+)/.exec(String(text||''));return m?m[1]:String(text||'').trim()}
+function codeFrom(text){const t=String(text||'').trim();if(t.startsWith('B2~'))return t;const m=/[#&?]m=([\w-]+)/.exec(t);return m?m[1]:t}
 $('#aScan').onclick=async()=>{if(!await needMe())return toast("Identifie-toi d'abord pour récupérer ton match.",true);
  const done=modal(`<div class="scan"><h2>📷 Scanner un match</h2><video id="scanV" playsinline muted></video><p class="mut" id="scanMsg">Vise le QR code affiché sur le téléphone de l'observateur.</p>
   <button class="btn g" id="scanPhoto" type="button">🖼️ Utiliser une photo du QR code</button></div>`,[{t:'Fermer',v:0,cls:'g'}]);
@@ -225,15 +226,16 @@ $('#aScan').onclick=async()=>{if(!await needMe())return toast("Identifie-toi d'a
  try{scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false});const v=$('#scanV');v.srcObject=scanStream;await v.play();
   const det='BarcodeDetector' in window?new BarcodeDetector({formats:['qr_code']}):null,cv=document.createElement('canvas'),cx=cv.getContext('2d',{willReadFrequently:true});
   scanTimer=setInterval(async()=>{if(!v.videoWidth)return;let txt=null;
-   try{if(det){const r=await det.detect(v);if(r[0])txt=r[0].rawValue}else{cv.width=v.videoWidth;cv.height=v.videoHeight;cx.drawImage(v,0,0);const d=cx.getImageData(0,0,cv.width,cv.height);const r=jsQR(d.data,d.width,d.height,{inversionAttempts:'dontInvert'});if(r)txt=r.data}}catch(e){}
+   try{if(det){const r=await det.detect(v);if(r[0])txt=r[0].rawValue}else{const k=Math.min(1,800/Math.max(v.videoWidth,v.videoHeight));cv.width=v.videoWidth*k;cv.height=v.videoHeight*k;cx.drawImage(v,0,0,cv.width,cv.height);const d=cx.getImageData(0,0,cv.width,cv.height);const r=jsQR(d.data,d.width,d.height,{inversionAttempts:'attemptBoth'});if(r)txt=r.data}}catch(e){}
    if(txt){stopScan();$('#modal').innerHTML='';importMatch(codeFrom(txt))}},250)}
  catch(e){const m=$('#scanMsg');if(m)m.textContent="La caméra n'est pas accessible. Autorise-la dans le navigateur, ou prends le QR code en photo et choisis « Utiliser une photo »."}
  await done;stopScan()};
 $('#qrPhoto').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;stopScan();$('#modal').innerHTML='';
- try{const img=await createImageBitmap(f),cv=document.createElement('canvas'),k=Math.min(1,1600/Math.max(img.width,img.height));cv.width=img.width*k;cv.height=img.height*k;
-  const cx=cv.getContext('2d');cx.drawImage(img,0,0,cv.width,cv.height);const d=cx.getImageData(0,0,cv.width,cv.height),r=jsQR(d.data,d.width,d.height);
+ try{const img=await createImageBitmap(f);let r=null;
+  for(const max of [1200,800,1800,500]){const cv=document.createElement('canvas'),k=Math.min(1,max/Math.max(img.width,img.height));cv.width=Math.round(img.width*k);cv.height=Math.round(img.height*k);
+   const cx=cv.getContext('2d');cx.drawImage(img,0,0,cv.width,cv.height);const d=cx.getImageData(0,0,cv.width,cv.height);r=jsQR(d.data,d.width,d.height,{inversionAttempts:'attemptBoth'});if(r)break}
   if(!r)throw new Error('aucun QR code trouvé sur la photo');importMatch(codeFrom(r.data))}catch(x){toast('Photo illisible : '+(x.message||x),true)}};
-async function importMatch(code){let m;try{m=R_.decodeMatch(code)}catch(x){return toast('QR code refusé : '+x.message,true)}
+async function importMatch(code){let m;try{m=R_.decodeMatch(code,CFG)}catch(x){return toast('QR code refusé : '+x.message,true)}
  if(!await needMe())return toast("Identifie-toi pour récupérer ton match.",true);
  if(ROWS.some(r=>r['ID match']===m.id))return toast('Ce match est déjà dans ton historique.',true);
  if(isMe(m.o))return toast("Tu étais l'observateur de ce match : il est déjà dans ton historique.",true);

@@ -100,8 +100,22 @@ function progression(cfg,rows,opt){opt=opt||{};let T=sortRows(rows);
 /* Match observé partagé par QR code : données compactes + code de contrôle (un QR modifié est refusé). */
 const b64e=str=>btoa(unescape(encodeURIComponent(str))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 const b64d=str=>decodeURIComponent(escape(atob(String(str).replace(/-/g,'+').replace(/_/g,'/'))));
-function encodeMatch(m){const body={v:1,id:m.id,d:m.d,h:m.h,a:m.a,o:m.o,oc:m.oc||'',p:m.p};return b64e(JSON.stringify({...body,s:hash(SALT+'M'+JSON.stringify(body)).slice(-8)}))}
-function decodeMatch(code){let o;try{o=JSON.parse(b64d(String(code).trim()))}catch(e){throw new Error("ce QR code n'est pas un match Ball Star")}
+/* Format v2 (compact, depuis la v1.9) : champs séparés par « ~ », bonus BallStar donné par son numéro dans la liste.
+   ~85 caractères au lieu de ~330 → QR code beaucoup plus simple (41×41 modules au lieu de 69×69), lisible par les vieux appareils. */
+const clip=(t,n)=>String(t||'').replace(/~/g,'-').trim().slice(0,n);
+function encodeMatch(m,cfg){const ai=ACTS.findIndex(x=>x.n===m.a),list=(cfg&&cfg.acts[m.a]||{obs:[]}).obs;
+ const bo=t=>{const i=list.indexOf(t);return i>=0?String(i+1):'*'+clip(t,24)};
+ const d=String(m.d||'').replace(/-/g,'').slice(2),h=String(m.h||'').replace(':','').slice(0,4);
+ const f=['B2',m.id,d,h,ai>=0?ai:clip(m.a,20),...m.p.flatMap(P=>[clip(P[0],22),P[1],bo(P[2]),P[3]]),clip(m.o,22)];
+ const body=f.join('~');return body+'~'+hash(SALT+'M2'+body).slice(-6)}
+function decodeMatch(code,cfg){code=String(code||'').trim();
+ if(code.startsWith('B2~')){const f=code.split('~');if(f.length!==15)throw new Error("ce QR code n'est pas un match Ball Star");
+  const sig=f.pop(),body=f.join('~');if(sig!==hash(SALT+'M2'+body).slice(-6))throw new Error('ce QR code a été modifié');
+  const [,id,d,h,ai,n0,s0,b0,c0,n1,s1,b1,c1,o]=f,a=/^\d+$/.test(ai)&&ACTS[+ai]?ACTS[+ai].n:ai,list=(cfg&&cfg.acts[a]||{obs:[]}).obs;
+  const bo=t=>t.startsWith('*')?t.slice(1):(list[+t-1]||'Bonus n°'+t);
+  return{v:2,id,d:`20${d.slice(0,2)}-${d.slice(2,4)}-${d.slice(4,6)}`,h:`${h.slice(0,2)}:${h.slice(2,4)}`,a,o,oc:'',p:[[n0,N(s0),bo(b0),N(c0)],[n1,N(s1),bo(b1),N(c1)]]}}
+ /* ancien format v1 (JSON) : toujours accepté */
+ let o;try{o=JSON.parse(b64d(code))}catch(e){throw new Error("ce QR code n'est pas un match Ball Star")}
  if(!o||o.v!==1||!Array.isArray(o.p)||o.p.length!==2)throw new Error("ce QR code n'est pas un match Ball Star");
  const {s:sig,...body}=o;if(sig!==hash(SALT+'M'+JSON.stringify(body)).slice(-8))throw new Error('ce QR code a été modifié');return body}
 
