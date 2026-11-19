@@ -299,42 +299,6 @@ async function exporter(){if(!ME){toast("Identifie-toi d'abord.",true);return fa
   EPS.downloadXLSX(o,name);toast('Fichier exporté : '+name);return true}catch(e){toast('Export impossible : '+(e.message||e),true);return false}}
 $('#bExport').onclick=exporter;
 
-/* ───────── Envoi vers Nuage (si le prof a renseigné un lien de dépôt dans ses réglages) ─────────
-   Envoi direct par WebDAV sur le partage public Nextcloud ; si le serveur ou le navigateur le refuse,
-   le fichier est enregistré sur l'appareil et la page de dépôt Nuage s'ouvre pour le déposer. */
-const nomFichier=(suffixe)=>[fileSafe(ME.nom).toUpperCase(),fileSafe(ME.prenom),fileSafe(ME.classe)].filter(Boolean).join('_')+'_BallStar'+(suffixe||'')+'.xlsx';
-/* Mot de passe du partage : tapé par l'élève au premier envoi, retenu sur son appareil (jamais dans les réglages ni dans les fichiers). */
-const PW_KEY=()=>'BALLSTAR_NUAGE_MDP_'+R_.norm(CFG.nuage).slice(-24);
-function demanderMdp(msg){let val='';const p=modal(`<h2>🔑 Mot de passe Nuage</h2><p>${msg||'Le dossier Nuage de ton professeur est protégé. Tape le mot de passe qu\'il t\'a donné.'}</p>
- <input type="password" id="nPw" autocomplete="off" aria-label="Mot de passe Nuage" style="margin:4px 0 6px"><label class="chk" style="justify-content:center;margin-bottom:10px"><input type="checkbox" id="nPwShow"> Afficher</label>`,
- [{t:'Envoyer',v:'ok'},{t:'Annuler',v:'',cls:'g'}]);
- const i=$('#nPw');i.oninput=()=>{val=i.value};i.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();$('#modal [data-i="0"]').click()}};$('#nPwShow').onchange=e=>{i.type=e.target.checked?'text':'password'};setTimeout(()=>i.focus(),50);
- return p.then(v=>v==='ok'&&val.trim()?val.trim():null)}
-async function putNuage(bytes,name,pw){const u=new URL(CFG.nuage),tok=(/\/s\/([A-Za-z0-9]+)/.exec(u.pathname)||[])[1],base=u.origin+u.pathname.split(/\/(?:index\.php\/)?s\//)[0],f=encodeURIComponent(name);pw=pw||'';
- const essais=[{url:`${base}/public.php/dav/files/${tok}/${f}`,h:pw?{Authorization:'Basic '+btoa('anonymous:'+pw)}:{}},{url:`${base}/public.php/webdav/${f}`,h:{Authorization:'Basic '+btoa(tok+':'+pw)}}];
- let auth=false,last='';for(const e of essais){try{const r=await fetch(e.url,{method:'PUT',body:new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),credentials:'omit',headers:{'X-Requested-With':'XMLHttpRequest',...e.h}});
-   if(r.ok)return true;if(r.status===401||r.status===403)auth=true;last='HTTP '+r.status}catch(x){last='réseau'}}
- const err=new Error(last);err.auth=auth;throw err}
-async function envoyerNuage(){if(!ME)return toast("Identifie-toi d'abord.",true);if(!ROWS.length)return toast("Aucun match à envoyer pour l'instant.",true);if(!CFG.nuage)return;
- const d=new Date(),p=n=>String(n).padStart(2,'0'),name=nomFichier(`_${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}_${p(d.getHours())}h${p(d.getMinutes())}`);
- let bytes;try{bytes=await EPS.exportXLSX({ids:[ME.id],apps:[APP_ID],sansEleves:true})}catch(e){return toast('Export impossible : '+(e.message||e),true)}
- let pw=CFG.nuageMdp?ls.get(PW_KEY()):'',msg='';
- for(let essai=0;essai<3;essai++){
-  if(CFG.nuageMdp&&!pw){pw=await demanderMdp(msg);if(!pw)return toast('Envoi annulé.')}
-  const b=$('#bNuage');b.disabled=true;b.textContent='☁️ Envoi en cours…';
-  try{await putNuage(bytes,name,pw);if(CFG.nuageMdp)ls.set(PW_KEY(),pw);renderNuage();toast('☁️ Sauvegarde envoyée sur Nuage ✔');
-   return modal(`<h2>☁️ Envoyé !</h2><p>Ta sauvegarde <b>${esc(name)}</b> est dans le dossier Nuage de ton professeur.</p>`,[{t:'OK',v:1}])}
-  catch(e){if(e.auth&&CFG.nuageMdp){ls.set(PW_KEY(),'');pw='';msg='❌ Mot de passe incorrect. Vérifie-le et réessaie.';continue}
-   if(e.auth&&!CFG.nuageMdp){msg='Le dossier Nuage demande un mot de passe. Tape celui que ton professeur t\'a donné.';const q=await demanderMdp(msg);if(!q)return toast('Envoi annulé.');pw=q;CFG.nuageMdp=true;continue}
-   break}
-  finally{const b=$('#bNuage');b.disabled=false;b.textContent='☁️ Envoyer vers Nuage'}}
- EPS.downloadXLSX(bytes,name);
- await modal(`<h2>☁️ Dépôt sur Nuage</h2><p>L'envoi direct n'a pas fonctionné sur cet appareil. Pas de souci, en deux étapes :</p>
-  <div class="prev" style="text-align:left"><div style="display:block">1. Ta sauvegarde <b>${esc(name)}</b> vient d'être enregistrée sur ton appareil (dossier Téléchargements).</div><div style="display:block">2. Ouvre Nuage${CFG.nuageMdp?', tape le mot de passe,':''} et dépose ce fichier.</div></div>
-  <p style="margin-top:12px"><a class="btn v" href="${esc(CFG.nuage)}" target="_blank" rel="noopener">☁️ Ouvrir Nuage</a></p>`,[{t:'Fermer',v:1,cls:'g'}])}
-$('#bNuage').onclick=envoyerNuage;
-function renderNuage(){$('#nuageZone').hidden=!CFG.nuage;const f=$('#bNuagePw');if(f)f.hidden=!(CFG.nuage&&CFG.nuageMdp&&ls.get(PW_KEY()))}
-$('#bNuagePw').onclick=()=>{ls.set(PW_KEY(),'');renderNuage();toast('Mot de passe Nuage oublié sur cet appareil.')};
 $('#bClear').onclick=async()=>{if(!ME)return toast("Aucune donnée : tu n'es pas identifié.",true);
  const v=await modal(`<h2>⚠️ Effacer Ball Star ?</h2><p>As-tu pensé à <b>exporter ta sauvegarde (.xlsx)</b> ? Effacer supprime définitivement tes matchs, ton XP et tes avatars Ball Star sur cet appareil.</p>`,
   [{t:'⬇️ Exporter d\'abord',v:'exp'},{t:'Effacer',v:'del',cls:'r'},{t:'Annuler',v:'',cls:'g'}]);
@@ -368,7 +332,7 @@ $('#cfgFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(
  catch(x){toast('Fichier refusé : '+(x.message||x),true)}};
 
 /* ───────── Rendu global & démarrage ───────── */
-function renderAll(){renderNuage();renderArene();renderDefis();renderAvatars();renderBilan();if(!$('#vMatch').hidden)renderMatchForm()}
+function renderAll(){renderArene();renderDefis();renderAvatars();renderBilan();if(!$('#vMatch').hidden)renderMatchForm()}
 document.addEventListener('click',async e=>{if(e.target.id==='bIdent'&&window.ELEVE){ELEVE.changer();await ELEVE.demander();reload()}});
 document.addEventListener('eleve-change',()=>reload());
 (async()=>{try{if(window.ELEVE){ELEVE.bandeau($('#who'));await reload();if(!ME)await ELEVE.demander();await reload();resumeLive();const h=/[#&]m=([\w-]+)/.exec(location.hash);if(h){history.replaceState(null,'',location.pathname+location.search);importMatch(h[1])}}else renderAll()}catch(e){console.error(e);renderAll()}})();

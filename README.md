@@ -52,12 +52,8 @@ Boutons « 📜 Règles du jeu » (pop-up avec le barème, les niveaux et les pa
 - Chaque match enregistre le code des réglages utilisés (colonne « Réglages »).
 - De toute façon, Ball Star Prof recalcule l'XP avec les réglages du professeur.
 
-## Envoyer vers Nuage (facultatif)
-Si le professeur colle dans Ball Star Prof le lien de partage d'un dossier Nuage (cloud de l'Éducation nationale, ou tout Nextcloud), le Bilan de l'élève affiche « ☁️ Envoyer vers Nuage ». Sans lien dans les réglages, aucun bouton.
-- Envoi direct du fichier `NOM_Prenom_Classe_BallStar_AAAA-MM-JJ_HHhMM.xlsx` sur le partage (WebDAV public).
-- Si le serveur ou le navigateur refuse l'envoi direct, le fichier est enregistré sur l'appareil et la page de dépôt Nuage s'ouvre pour le déposer.
-- Le lien arrive chez l'élève par le fichier de réglages signé : un lien modifié à la main est refusé.
-- Partage protégé : le prof coche « mot de passe » ; l'élève tape le mot de passe au premier envoi, il est retenu sur son appareil (bouton « Oublier le mot de passe »). Le mot de passe ne figure jamais dans les réglages ni dans les fichiers.
+## Envoi au professeur par l'ENT
+Le Bilan (carte Sauvegarde) propose, sous le bouton d'export, un lien « Télécharger l'application NEO Pocket » (logo de l'ENT NEO, vers https://edifice.io/nos-produits/neo/neo-pocket/) pour envoyer le fichier de sauvegarde au professeur. L'envoi direct vers Nuage (v2.0 à v2.2) a été retiré en v2.3.
 
 ## Données (consignes du portail)
 - Identification par `eleve-core.js` (nom, prénom, classe issus du portail Applis EPS Élèves, sinon saisis par l'élève).

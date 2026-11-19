@@ -261,3 +261,9 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 .lbonus .big{font-family:var(--fd);font-size:1.4rem}
 .lbonus .cnt{font-weight:900;font-size:.75rem;background:#0002;border-radius:8px;padding:2px 8px}
 .lwho small{display:block;font-size:.75rem;line-height:1.25}
+
+/* v2.3 : lien vers l'application NEO Pocket (ENT) */
+.neo{display:flex;align-items:center;gap:12px;margin-top:14px;padding:10px 12px;border-radius:16px;background:#ffffff0d;border:2px solid var(--line);color:var(--tx);text-decoration:none}
+.neo:hover{border-color:var(--y)}
+.neo img{width:56px;height:56px;border-radius:14px;flex:none}
+.neo b{display:block}.neo small{display:block;color:var(--mut);font-weight:700;font-size:.8rem}
