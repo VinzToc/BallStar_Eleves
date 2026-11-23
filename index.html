@@ -13,9 +13,18 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@600;800;900&display=swap">
 <link rel="stylesheet" href="ballstar.css">
+
+<style id="titre-moderne">/* Titre en casse mixte + logo mis en valeur, aux couleurs du logo */
+.top h1{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif!important;font-style:italic!important;font-weight:900!important;text-transform:none!important;letter-spacing:.005em!important;line-height:1.08;font-size:2rem!important;background:none!important;-webkit-text-stroke:0!important;color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:0 2px 0 #1d0650,0 4px 12px rgba(0,0,0,.45)!important}
+.top h1 .tm{background:linear-gradient(180deg,#ffe14a,#f5a623 72%)!important;-webkit-background-clip:text!important;background-clip:text!important;color:#f5a623!important;-webkit-text-fill-color:transparent!important;text-shadow:none!important;filter:drop-shadow(0 2px 0 #1d0650)}
+.top h1 small,.top h1 em{font-style:normal!important;text-shadow:none!important;-webkit-text-fill-color:currentColor!important}
+.top .lg{border-radius:22%!important;box-shadow:0 0 0 2px rgba(255,255,255,.3),0 0 22px rgba(255,225,74,.45),0 6px 16px rgba(0,0,0,.4)!important;transition:transform .3s}
+.top .lg:hover{transform:rotate(-5deg) scale(1.05)}
+@media(max-width:520px){.top h1{font-size:calc(2rem * .8)!important}}
+</style>
 </head><body>
 <div class="wrap">
-<header class="top"><img class="lg" id="logo" src="icons/icon-192.png" alt="" width="52" height="52" style="border-radius:12px"><div><h1>BALL <span>STAR</span></h1><p>Raquettes &amp; combat · le challenge<span id="ver"></span></p></div><span class="sp"></span>
+<header class="top"><img class="lg" id="logo" src="icons/icon-192.png" alt="" width="52" height="52" style="border-radius:12px"><div><h1>Ball <span class="tm">Star</span></h1><p>Raquettes &amp; combat · le challenge<span id="ver"></span></p></div><span class="sp"></span>
  <a class="ib" href="https://vinztoc.github.io/Applis_EPS_Eleves/" title="Retour au portail Applis EPS Élèves" aria-label="Retour au portail">↩</a></header>
 <div id="who" class="who"></div>
 
