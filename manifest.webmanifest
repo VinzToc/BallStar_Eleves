@@ -1,7 +1,7 @@
 {
  "id": "/BallStar_Eleves/",
- "name": "Ball Star",
- "short_name": "Ball Star",
+ "name": "BallStar",
+ "short_name": "BallStar",
  "description": "Le challenge des sports de raquette et de combat : joue, gagne de l'XP, débloque des avatars.",
  "lang": "fr",
  "start_url": "./",
