@@ -1,8 +1,8 @@
 /* Service worker Ball Star – tout est mis en cache : l'app fonctionne sans réseau, et prend la dernière version dès qu'il y a du réseau.
    Pour publier une mise à jour : changer VERSION ci-dessous (et APP_VERSION dans version.js). */
-const VERSION='2.3.2';
+const VERSION='2.3.3';
 const CACHE='ballstar-eleves-'+VERSION;
-const CORE=['nouveautes.js','nouveautes.json',"./","index.html","ballstar.js","ballstar.css","bs-art.js","bs-rules.js","bs-install.js","lib/qrcode.js","lib/jsQR.js","bs-xlsx.js","eps-core.js","eleve-core.js","version.js","manifest.webmanifest","icons/icon-192.png","icons/icon-512.png","icons/icon-maskable-512.png","icons/apple-touch-icon.png","icons/neo-pocket.png"];
+const CORE=['footer.js','nouveautes.js','nouveautes.json',"./","index.html","ballstar.js","ballstar.css","bs-art.js","bs-rules.js","bs-install.js","lib/qrcode.js","lib/jsQR.js","bs-xlsx.js","eps-core.js","eleve-core.js","version.js","manifest.webmanifest","icons/icon-192.png","icons/icon-512.png","icons/icon-maskable-512.png","icons/apple-touch-icon.png","icons/neo-pocket.png"];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil((async()=>{for(const k of await caches.keys())if(k.startsWith('ballstar-eleves-')&&k!==CACHE)await caches.delete(k);await self.clients.claim()})())});
 // Réseau d'abord (la dernière version est utilisée dès qu'il y a du réseau), cache si hors ligne ou réseau trop lent.
