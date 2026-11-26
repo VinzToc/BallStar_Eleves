@@ -1,1 +1,1 @@
-const APP_VERSION="2.3.6"; // ← modifier ici ET dans sw.js (VERSION) pour publier une mise à jour
+const APP_VERSION="2.3.6"; // ← seul endroit à modifier pour changer la version (le service worker la lit)
