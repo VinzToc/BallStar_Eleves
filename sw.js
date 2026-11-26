@@ -1,6 +1,6 @@
 /* Service worker Ball Star – tout est mis en cache : l'app fonctionne sans réseau, et prend la dernière version dès qu'il y a du réseau.
    Pour publier une mise à jour : changer VERSION ci-dessous (et APP_VERSION dans version.js). */
-const VERSION='2.3.5';
+const VERSION='2.3.6';
 const CACHE='ballstar-eleves-'+VERSION;
 const CORE=['fonts/fonts.css','fonts/lilita-one-latin-400-normal.woff2','fonts/nunito-latin-600-normal.woff2','fonts/nunito-latin-800-normal.woff2','fonts/nunito-latin-900-normal.woff2','footer.js','nouveautes.js','nouveautes.json',"./","index.html","ballstar.js","ballstar.css","bs-art.js","bs-rules.js","bs-install.js","lib/qrcode.js","lib/jsQR.js","bs-xlsx.js","eps-core.js","eleve-core.js","version.js","manifest.webmanifest","icons/icon-192.png","icons/icon-512.png","icons/icon-maskable-512.png","icons/apple-touch-icon.png","icons/neo-pocket.png"];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()))});
